@@ -1,0 +1,56 @@
+[
+    {
+        "id": 1,
+        "name": "Latte Vainilla",
+        "description": "Café espresso con leche cremosa y un toque de vainilla.",
+        "image": "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f",
+        "price": 65,
+        "available": true,
+        "category": "Café"
+    },
+    {
+        "id": 2,
+        "name": "Americano",
+        "description": "Espresso preparado con agua caliente para un sabor intenso.",
+        "image": "https://images.unsplash.com/photo-1497935586351-b67a49e012bf",
+        "price": 45,
+        "available": true,
+        "category": "Café"
+    },
+    {
+        "id": 3,
+        "name": "Frappé Caramelo",
+        "description": "Bebida fría de café con hielo, leche y caramelo.",
+        "image": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735",
+        "price": 75,
+        "available": true,
+        "category": "Bebidas frías"
+    },
+    {
+        "id": 4,
+        "name": "Croissant de Jamón",
+        "description": "Croissant horneado relleno de jamón y queso.",
+        "image": "https://images.unsplash.com/photo-1555507036-ab1f4038808a",
+        "price": 55,
+        "available": true,
+        "category": "Alimentos"
+    },
+    {
+        "id": 5,
+        "name": "Sandwich de Pollo",
+        "description": "Sandwich de pollo con lechuga, tomate y aderezo.",
+        "image": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af",
+        "price": 70,
+        "available": false,
+        "category": "Alimentos"
+    },
+    {
+        "id": 6,
+        "name": "Chocolate Caliente",
+        "description": "Chocolate cremoso preparado con leche caliente.",
+        "image": "https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed",
+        "price": 55,
+        "available": true,
+        "category": "Bebidas calientes"
+    }
+]
