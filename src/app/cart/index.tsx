@@ -1,11 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../../components/BottomNav';
 import { colors, font, radius, spacing } from '../../constants/theme';
-import { useProductsStore } from '../../store/productsStore';
+import {
+  MAX_ITEMS_PER_ORDER,
+  ORDER_COOLDOWN_MS,
+  useProductsStore,
+} from '../../store/productsStore';
 import type { CartItem } from '../../types/product';
+
+function formatRemainingTime(milliseconds: number): string {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
 function CartProduct({ item }: { item: CartItem }) {
   const increaseQuantity = useProductsStore((state) => state.increaseQuantity);
@@ -41,7 +53,12 @@ function CartProduct({ item }: { item: CartItem }) {
             <Text style={styles.quantity}>{item.quantity}</Text>
             <Pressable
               style={styles.quantityButton}
-              onPress={() => increaseQuantity(item.cartItemId)}
+              onPress={() => {
+                const result = increaseQuantity(item.cartItemId);
+                if (!result.success) {
+                  Alert.alert('Límite de artículos', result.message);
+                }
+              }}
             >
               <Ionicons name="add" size={17} color={colors.primary} />
             </Pressable>
@@ -56,8 +73,23 @@ function CartProduct({ item }: { item: CartItem }) {
 export default function CartScreen() {
   const router = useRouter();
   const cart = useProductsStore((state) => state.cart);
+  const latestOrderAt = useProductsStore((state) => state.orders[0]?.createdAt ?? null);
   const clearCart = useProductsStore((state) => state.clearCart);
+  const placeOrder = useProductsStore((state) => state.placeOrder);
+  const [now, setNow] = useState(Date.now());
+  const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const total = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const remainingMs = latestOrderAt
+    ? Math.max(0, latestOrderAt + ORDER_COOLDOWN_MS - now)
+    : 0;
+
+  useEffect(() => {
+    if (!latestOrderAt) return;
+
+    setNow(Date.now());
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [latestOrderAt]);
 
   const confirmClearCart = () => {
     Alert.alert(
@@ -68,6 +100,21 @@ export default function CartScreen() {
         { text: 'Vaciar', style: 'destructive', onPress: clearCart },
       ]
     );
+  };
+
+  const submitOrder = () => {
+    const result = placeOrder();
+
+    if (!result.success) {
+      const message = result.reason === 'cooldown'
+        ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
+        : 'Tu carrito está vacío.';
+      Alert.alert('No se pudo generar el pedido', message);
+      return;
+    }
+
+    Alert.alert('Pedido generado', `Tu pedido ${result.order.number} fue recibido.`);
+    router.replace('/orders');
   };
 
   return (
@@ -108,15 +155,26 @@ export default function CartScreen() {
         ListFooterComponent={
           cart.length > 0 ? (
             <View style={styles.summary}>
+              <View style={styles.limitRow}>
+                <Ionicons name="bag-handle-outline" size={17} color={colors.muted} />
+                <Text style={styles.limitText}>
+                  {cartQuantity}/{MAX_ITEMS_PER_ORDER} artículos permitidos
+                </Text>
+              </View>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.total}>${total.toFixed(2)}</Text>
               </View>
               <Pressable
-                style={styles.orderButton}
-                onPress={() => Alert.alert('Pedido listo', 'El siguiente paso será elegir la hora de recolección.')}
+                style={[styles.orderButton, remainingMs > 0 && styles.orderButtonDisabled]}
+                onPress={submitOrder}
+                disabled={remainingMs > 0}
               >
-                <Text style={styles.orderButtonText}>Continuar pedido</Text>
+                <Text style={styles.orderButtonText}>
+                  {remainingMs > 0
+                    ? `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
+                    : 'Generar pedido'}
+                </Text>
               </Pressable>
             </View>
           ) : null
@@ -176,6 +234,8 @@ const styles = StyleSheet.create({
   quantity: { minWidth: 16, textAlign: 'center', fontSize: font.small, fontWeight: '700', color: colors.text },
   itemTotal: { fontSize: font.body, fontWeight: '800', color: colors.primary },
   summary: { marginTop: spacing.md, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border },
+  limitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  limitText: { fontSize: font.small, color: colors.muted },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: font.heading, fontWeight: '700', color: colors.text },
   total: { fontSize: 22, fontWeight: '800', color: colors.primary },
@@ -187,6 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   orderButtonText: { fontSize: font.body, fontWeight: '700', color: colors.onPrimary },
+  orderButtonDisabled: { opacity: 0.45 },
   empty: { alignItems: 'center', marginTop: 80, paddingHorizontal: spacing.xl },
   emptyTitle: { marginTop: spacing.lg, fontSize: font.heading, fontWeight: '700', color: colors.text },
   emptyText: { marginTop: spacing.sm, textAlign: 'center', fontSize: font.small, color: colors.muted },

@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 import { colors, font, radius, spacing } from '../../constants/theme';
-import { useProductsStore } from '../../store/productsStore';
+import { MAX_ITEMS_PER_ORDER, useProductsStore } from '../../store/productsStore';
 import type { CustomizationGroup, Product, SelectedCustomization } from '../../types/product';
 
 type SelectionState = Record<string, string[]>;
@@ -34,6 +34,9 @@ export default function ProductDetailScreen() {
   const router = useRouter();
   const product = useProductsStore((state) => state.getProductById(id));
   const addToCart = useProductsStore((state) => state.addToCart);
+  const cartQuantity = useProductsStore((state) =>
+    state.cart.reduce((total, item) => total + item.quantity, 0)
+  );
   const [selections, setSelections] = useState<SelectionState>({});
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
@@ -67,6 +70,9 @@ export default function ProductDetailScreen() {
       return total + extras;
     }, product.price);
   }, [product, selections, visibleGroups]);
+
+  const availableSlots = MAX_ITEMS_PER_ORDER - cartQuantity;
+  const canAddToCart = availableSlots > 0;
 
   if (!product) {
     return (
@@ -142,7 +148,7 @@ export default function ProductDetailScreen() {
   const addProduct = () => {
     if (!validateSelections()) return;
 
-    addToCart({
+    const result = addToCart({
       productId: product.id,
       name: product.name,
       image: product.image,
@@ -151,6 +157,11 @@ export default function ProductDetailScreen() {
       selections: buildSelections(),
       notes: notes.trim(),
     });
+
+    if (!result.success) {
+      Alert.alert('Límite de artículos', result.message);
+      return;
+    }
 
     Alert.alert('Agregado al carrito', `${quantity} × ${product.name}`, [
       { text: 'Seguir comprando', onPress: () => router.back() },
@@ -240,15 +251,31 @@ export default function ProductDetailScreen() {
           <Text style={styles.quantityText}>{quantity}</Text>
           <Pressable
             style={styles.quantityButton}
-            onPress={() => setQuantity((current) => current + 1)}
+            onPress={() => {
+              if (quantity >= availableSlots) {
+                Alert.alert(
+                  'Límite de artículos',
+                  `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`
+                );
+                return;
+              }
+
+              setQuantity((current) => current + 1);
+            }}
           >
             <Ionicons name="add" size={20} color={colors.primary} />
           </Pressable>
         </View>
       </View>
 
-      <Pressable style={styles.addButton} onPress={addProduct}>
-        <Text style={styles.addButtonText}>Agregar al carrito</Text>
+      <Pressable
+        style={[styles.addButton, !canAddToCart && styles.addButtonDisabled]}
+        onPress={addProduct}
+        disabled={!canAddToCart}
+      >
+        <Text style={styles.addButtonText}>
+          {canAddToCart ? 'Agregar al carrito' : 'Carrito lleno'}
+        </Text>
         <Text style={styles.addButtonPrice}>${(unitPrice * quantity).toFixed(2)}</Text>
       </Pressable>
     </ScrollView>
@@ -347,6 +374,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
   },
+  addButtonDisabled: { opacity: 0.45 },
   addButtonText: { fontSize: font.body, fontWeight: '700', color: colors.onPrimary },
   addButtonPrice: { fontSize: font.body, fontWeight: '800', color: colors.onPrimary },
   notFound: {

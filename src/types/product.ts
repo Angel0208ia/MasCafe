@@ -48,3 +48,21 @@ export type CartItem = {
 };
 
 export type NewCartItem = Omit<CartItem, 'cartItemId'>;
+
+export type Order = {
+  id: string;
+  number: string;
+  items: CartItem[];
+  total: number;
+  createdAt: number;
+  status: 'received';
+};
+
+export type CartActionResult = {
+  success: boolean;
+  message?: string;
+};
+
+export type PlaceOrderResult =
+  | { success: true; order: Order }
+  | { success: false; reason: 'empty' | 'cooldown'; remainingMs: number };

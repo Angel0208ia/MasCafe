@@ -65,7 +65,10 @@ export default function BottomNav({ active }: BottomNavProps) {
         <Text style={[styles.label, active === 'carrito' && styles.activeLabel]}>Carrito</Text>
       </Pressable>
 
-      <Pressable style={[styles.item, active === 'pedidos' && styles.activeItem]}>
+      <Pressable
+        style={[styles.item, active === 'pedidos' && styles.activeItem]}
+        onPress={() => router.replace('/orders')}
+      >
         <Ionicons
           name={active === 'pedidos' ? 'time' : 'time-outline'}
           size={21}
