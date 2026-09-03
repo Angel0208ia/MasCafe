@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 import { useProductsStore } from '../store/productsStore';
@@ -16,14 +16,20 @@ export default function BottomNav({ active }: BottomNavProps) {
 
   return (
     <View style={styles.container}>
-      <Pressable style={[styles.item, active === 'inicio' && styles.activeItem]}>
-        <Ionicons
-          name={active === 'inicio' ? 'home' : 'home-outline'}
-          size={21}
-          color={active === 'inicio' ? colors.primary : colors.muted}
-        />
-        <Text style={[styles.label, active === 'inicio' && styles.activeLabel]}>Inicio</Text>
-      </Pressable>
+      <Link href="/" asChild>
+        <Pressable
+          style={[styles.item, active === 'inicio' && styles.activeItem]}
+          accessibilityRole="button"
+          accessibilityLabel="Ir al inicio"
+        >
+          <Ionicons
+            name={active === 'inicio' ? 'home' : 'home-outline'}
+            size={21}
+            color={active === 'inicio' ? colors.primary : colors.muted}
+          />
+          <Text style={[styles.label, active === 'inicio' && styles.activeLabel]}>Inicio</Text>
+        </Pressable>
+      </Link>
 
       <Pressable
         style={[styles.item, active === 'menu' && styles.activeItem]}
