@@ -60,10 +60,14 @@ export default function CartScreen() {
   const total = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const confirmClearCart = () => {
-    Alert.alert('Vaciar carrito', '¿Quieres eliminar todos los productos?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Vaciar', style: 'destructive', onPress: clearCart },
-    ]);
+    Alert.alert(
+      'Vaciar carrito',
+      '¿Quieres eliminar todos los productos del carrito?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Vaciar', style: 'destructive', onPress: clearCart },
+      ]
+    );
   };
 
   return (
@@ -80,7 +84,11 @@ export default function CartScreen() {
               <Text style={styles.subtitle}>Revisa tu pedido antes de continuar</Text>
             </View>
             {cart.length > 0 && (
-              <Pressable onPress={confirmClearCart}>
+              <Pressable
+                onPress={confirmClearCart}
+                accessibilityRole="button"
+                accessibilityLabel="Vaciar todo el carrito"
+              >
                 <Text style={styles.clearText}>Vaciar</Text>
               </Pressable>
             )}
