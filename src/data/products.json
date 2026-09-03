@@ -34,7 +34,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
           { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
@@ -167,7 +167,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
           { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
@@ -211,7 +211,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
           { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
@@ -339,7 +339,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
         ]
@@ -371,7 +371,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
         ]
@@ -393,7 +393,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
           { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
@@ -416,7 +416,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
         ]
@@ -447,7 +447,7 @@
         "type": "single",
         "required": true,
         "options": [
-          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
           { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
           { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
           { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
