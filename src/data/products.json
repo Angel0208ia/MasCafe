@@ -17,40 +17,6 @@
           { "id": "small", "name": "Chico", "extraPrice": 0 },
           { "id": "large", "name": "Grande", "extraPrice": 5 }
         ]
-      },
-      {
-        "id": "temperature",
-        "name": "Temperatura",
-        "type": "single",
-        "required": true,
-        "options": [
-          { "id": "hot", "name": "Caliente", "extraPrice": 0 },
-          { "id": "cold", "name": "Frío", "extraPrice": 0 }
-        ]
-      },
-      {
-        "id": "ice",
-        "name": "Cantidad de hielo",
-        "type": "single",
-        "required": true,
-        "options": [
-          { "id": "normal", "name": "Con hielo", "extraPrice": 0 },
-          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
-          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
-          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
-        ]
-      },
-      {
-        "id": "milk",
-        "name": "Leche",
-        "type": "single",
-        "required": true,
-        "options": [
-          { "id": "none", "name": "Sin leche", "extraPrice": 0 },
-          { "id": "regular", "name": "Leche regular", "extraPrice": 0 },
-          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
-          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
-        ]
       }
     ]
   },
