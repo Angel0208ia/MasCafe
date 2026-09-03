@@ -18,7 +18,10 @@ export default function BottomNav({ active }: BottomNavProps) {
     <View style={styles.container}>
       <Link href="/" asChild>
         <Pressable
-          style={[styles.item, active === 'inicio' && styles.activeItem]}
+          style={StyleSheet.flatten([
+            styles.item,
+            active === 'inicio' ? styles.activeItem : undefined,
+          ])}
           accessibilityRole="button"
           accessibilityLabel="Ir al inicio"
         >
