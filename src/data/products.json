@@ -1,0 +1,1279 @@
+[
+  {
+    "id": "1",
+    "name": "Americano",
+    "description": "Espresso con agua caliente, de sabor intenso y aromático.",
+    "price": 45,
+    "category": "Necesito despertar",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/americano,coffee?lock=1",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "small", "name": "Chico", "extraPrice": 0 },
+          { "id": "large", "name": "Grande", "extraPrice": 5 }
+        ]
+      },
+      {
+        "id": "temperature",
+        "name": "Temperatura",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "hot", "name": "Caliente", "extraPrice": 0 },
+          { "id": "cold", "name": "Frío", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "none", "name": "Sin leche", "extraPrice": 0 },
+          { "id": "regular", "name": "Leche regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "name": "Cappuccino",
+    "description": "Espresso con leche vaporizada y espuma cremosa.",
+    "price": 60,
+    "category": "Necesito despertar",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/cappuccino,coffee?lock=2",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "name": "Latte",
+    "description": "Espresso suave con abundante leche vaporizada.",
+    "price": 60,
+    "category": "Necesito despertar",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/latte,coffee?lock=3",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "name": "Espresso",
+    "description": "Café concentrado de sabor intenso y aromático.",
+    "price": 35,
+    "category": "Necesito despertar",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/espresso,coffee?lock=4",
+    "customizations": [
+      {
+        "id": "espresso_shots",
+        "name": "Elige tu espresso",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Normal", "extraPrice": 0 },
+          { "id": "double", "name": "Doble", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "name": "Moka",
+    "description": "Espresso con leche y un delicioso toque de chocolate.",
+    "price": 60,
+    "category": "Necesito despertar",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/mocha,coffee?lock=5",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "name": "Iced Coffee Bear",
+    "description": "Café frío y cremoso servido con hielo.",
+    "price": 55,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/iced,coffee?lock=6",
+    "customizations": [
+      {
+        "id": "flavor",
+        "name": "Sabor",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "original", "name": "Original", "extraPrice": 0 },
+          { "id": "latte", "name": "Latte", "extraPrice": 5 },
+          { "id": "caramel", "name": "Caramelo", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "7",
+    "name": "Matcha",
+    "description": "Bebida cremosa preparada con té verde matcha.",
+    "price": 65,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/matcha,latte?lock=7",
+    "customizations": [
+      {
+        "id": "temperature",
+        "name": "Temperatura",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "hot", "name": "Caliente", "extraPrice": 0 },
+          { "id": "cold", "name": "Frío", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "8",
+    "name": "Matcha Griego",
+    "description": "Matcha cremoso con un toque estilo griego.",
+    "price": 70,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/matcha,yogurt?lock=8"
+  },
+  {
+    "id": "9",
+    "name": "Chai",
+    "description": "Té especiado con leche, aromático y cremoso.",
+    "price": 60,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chai,latte?lock=9",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "10",
+    "name": "Chocolate Caliente",
+    "description": "Chocolate caliente, dulce y cremoso.",
+    "price": 55,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/hot,chocolate?lock=10",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "11",
+    "name": "Affogato",
+    "description": "Helado acompañado con una carga de espresso.",
+    "price": 70,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/affogato,coffee?lock=11"
+  },
+  {
+    "id": "12",
+    "name": "Mazapán Latte",
+    "description": "Latte cremoso con sabor dulce a mazapán.",
+    "price": 50,
+    "category": "Para los milk lovers",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/latte,peanut?lock=12",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "13",
+    "name": "Té",
+    "description": "Té ligero disponible frío o caliente.",
+    "price": 30,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/tea,drink?lock=13",
+    "customizations": [
+      {
+        "id": "temperature",
+        "name": "Temperatura",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "hot", "name": "Caliente", "extraPrice": 0 },
+          { "id": "cold", "name": "Frío", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "14",
+    "name": "Tisana",
+    "description": "Infusión frutal disponible fría o caliente.",
+    "price": 50,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/fruit,tea?lock=14",
+    "customizations": [
+      {
+        "id": "temperature",
+        "name": "Temperatura",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "hot", "name": "Caliente", "extraPrice": 0 },
+          { "id": "cold", "name": "Frío", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "15",
+    "name": "Limonada Lavanda",
+    "description": "Limonada refrescante con un toque floral.",
+    "price": 50,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/lavender,lemonade?lock=15",
+    "customizations": [
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "16",
+    "name": "Agua Fresca",
+    "description": "Bebida fresca preparada con sabores naturales.",
+    "price": 25,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/agua,fresca?lock=16",
+    "customizations": [
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "17",
+    "name": "Agua 500 ml",
+    "description": "Botella de agua natural de 500 ml.",
+    "price": 15,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/water,bottle?lock=17"
+  },
+  {
+    "id": "18",
+    "name": "Refresher",
+    "description": "Bebida fría, ligera y refrescante.",
+    "price": 55,
+    "category": "Hoy no quiero café",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/refreshing,fruit,drink?lock=18",
+    "customizations": [
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Hielo normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "none", "name": "Sin hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "19",
+    "name": "Licuado de Fresa",
+    "description": "Licuado cremoso preparado con fresa.",
+    "price": 55,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/strawberry,smoothie?lock=19",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "20",
+    "name": "Licuado de Plátano",
+    "description": "Licuado cremoso preparado con plátano.",
+    "price": 55,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/banana,smoothie?lock=20",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "21",
+    "name": "Licuado de Avena",
+    "description": "Licuado suave y cremoso preparado con avena.",
+    "price": 55,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/oat,smoothie?lock=21",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "22",
+    "name": "Choco Cacao",
+    "description": "Licuado cremoso con intenso sabor a cacao.",
+    "price": 55,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chocolate,smoothie?lock=22",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "23",
+    "name": "Licuado Combinado",
+    "description": "Combina dos ingredientes en un solo licuado.",
+    "price": 60,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/fruit,smoothie?lock=23",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "ingredients",
+        "name": "Elige dos ingredientes",
+        "type": "multiple",
+        "required": true,
+        "minSelections": 2,
+        "maxSelections": 2,
+        "options": [
+          { "id": "strawberry", "name": "Fresa", "extraPrice": 0 },
+          { "id": "banana", "name": "Plátano", "extraPrice": 0 },
+          { "id": "oat", "name": "Avena", "extraPrice": 0 },
+          { "id": "cacao", "name": "Cacao", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "24",
+    "name": "El Tornado",
+    "description": "Fresa, plátano, avena y cacao.",
+    "price": 65,
+    "category": "Licuados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/banana,strawberry,smoothie?lock=24",
+    "customizations": [
+      {
+        "id": "size",
+        "name": "Tamaño",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "500ml", "name": "500 ml", "extraPrice": 0 },
+          { "id": "1l", "name": "1 litro", "extraPrice": 10 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "25",
+    "name": "Frappé Cappuccino",
+    "description": "Bebida frappé de cappuccino preparada con leche.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/frappe,cappuccino?lock=25",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      },
+      {
+        "id": "ice",
+        "name": "Cantidad de hielo",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "normal", "name": "Normal", "extraPrice": 0 },
+          { "id": "light", "name": "Poco hielo", "extraPrice": 0 },
+          { "id": "extra", "name": "Hielo extra", "extraPrice": 0 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "26",
+    "name": "Frappé de Fresa con Yogur",
+    "description": "Frappé cremoso de fresa preparado con yogur.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/strawberry,yogurt,smoothie?lock=26"
+  },
+  {
+    "id": "27",
+    "name": "Frappé de Fresa con Agua",
+    "description": "Frappé refrescante de fresa preparado con agua.",
+    "price": 65,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/strawberry,slush?lock=27"
+  },
+  {
+    "id": "28",
+    "name": "Frappé de Cacao",
+    "description": "Frappé cremoso de cacao preparado con leche.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chocolate,frappe?lock=28",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "29",
+    "name": "Frappé de Frutos Rojos",
+    "description": "Frappé refrescante de frutos rojos con agua.",
+    "price": 65,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/berry,frappe?lock=29"
+  },
+  {
+    "id": "30",
+    "name": "Frappé de Taro",
+    "description": "Frappé cremoso con sabor dulce a taro.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/taro,milk,tea?lock=30",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "31",
+    "name": "Frappé de Matcha",
+    "description": "Frappé cremoso preparado con té verde matcha.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/matcha,frappe?lock=31",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "32",
+    "name": "Frappé Matcha Taro",
+    "description": "Combinación cremosa de matcha y taro.",
+    "price": 70,
+    "category": "Frappés",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/matcha,taro,drink?lock=32",
+    "customizations": [
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "lactose-free", "name": "Deslactosada", "extraPrice": 12 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "33",
+    "name": "Piña Colada Granizada",
+    "description": "Granizado tropical con sabor a piña colada.",
+    "price": 40,
+    "category": "Granizados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/pina,colada,drink?lock=33"
+  },
+  {
+    "id": "34",
+    "name": "Mango Chamoyada",
+    "description": "Granizado de mango con un toque de chamoy.",
+    "price": 40,
+    "category": "Granizados",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/mango,chamoy,drink?lock=34"
+  },
+  {
+    "id": "35",
+    "name": "Chilaquilitos",
+    "description": "Totopos con salsa y acompañamientos clásicos.",
+    "price": 50,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chilaquiles,mexican,food?lock=35",
+    "customizations": [
+      {
+        "id": "sauce",
+        "name": "Salsa",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "green", "name": "Verde", "extraPrice": 0 },
+          { "id": "red", "name": "Roja", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "protein",
+        "name": "Proteína",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "none", "name": "Sin pollo", "extraPrice": 0 },
+          { "id": "chicken", "name": "Con pollo", "extraPrice": 15 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "36",
+    "name": "Molletes",
+    "description": "Pan tostado con frijoles y queso gratinado.",
+    "price": 50,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/molletes,mexican,food?lock=36",
+    "customizations": [
+      {
+        "id": "ham",
+        "name": "Preparación",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "classic", "name": "Clásicos", "extraPrice": 0 },
+          { "id": "with-ham", "name": "Con jamón", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "37",
+    "name": "Burrito",
+    "description": "Tortilla rellena con proteína y acompañamientos.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/burrito,mexican,food?lock=37",
+    "customizations": [
+      {
+        "id": "protein",
+        "name": "Elige tu burrito",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "chicken", "name": "Pollo", "extraPrice": 0 },
+          { "id": "cecina", "name": "Cecina", "extraPrice": 10 },
+          { "id": "chilorio", "name": "Chilorio", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "38",
+    "name": "Cuernito",
+    "description": "Pan tipo croissant relleno y preparado al momento.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/croissant,sandwich?lock=38"
+  },
+  {
+    "id": "39",
+    "name": "Croissant",
+    "description": "Croissant dorado con relleno estilo cafetería.",
+    "price": 70,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/croissant,food?lock=39"
+  },
+  {
+    "id": "40",
+    "name": "Mini Hotcakes",
+    "description": "Mini hotcakes suaves con el acompañamiento que prefieras.",
+    "price": 50,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/pancakes,honey?lock=40",
+    "customizations": [
+      {
+        "id": "topping",
+        "name": "Acompañamiento",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "honey", "name": "Miel", "extraPrice": 0 },
+          { "id": "banana", "name": "Plátano", "extraPrice": 10 },
+          { "id": "strawberry", "name": "Fresa", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "41",
+    "name": "Torta",
+    "description": "Torta preparada al momento con relleno a elegir.",
+    "price": 40,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/mexican,sandwich?lock=41",
+    "customizations": [
+      {
+        "id": "filling",
+        "name": "Elige tu torta",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "chavo", "name": "Del Chavo", "extraPrice": 0 },
+          { "id": "cecina", "name": "Cecina", "extraPrice": 20 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "42",
+    "name": "Chapata",
+    "description": "Pan chapata relleno y preparado al momento.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/ciabatta,sandwich?lock=42"
+  },
+  {
+    "id": "43",
+    "name": "Waffle Sandwich",
+    "description": "Sándwich preparado entre waffles dorados.",
+    "price": 70,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/waffle,sandwich?lock=43"
+  },
+  {
+    "id": "44",
+    "name": "Sushi Cake",
+    "description": "Arroz, alga, proteína, pepino, queso y ajonjolí.",
+    "price": 50,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/sushi,cake?lock=44",
+    "customizations": [
+      {
+        "id": "protein",
+        "name": "Proteína",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "surimi", "name": "Surimi", "extraPrice": 0 },
+          { "id": "tuna", "name": "Atún", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "extras",
+        "name": "Extras",
+        "type": "multiple",
+        "required": false,
+        "maxSelections": 2,
+        "options": [
+          { "id": "extra-protein", "name": "Proteína extra", "extraPrice": 18 },
+          { "id": "eel", "name": "Anguila", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "45",
+    "name": "Poke",
+    "description": "Bowl con proteína, cuatro toppings y un ingrediente crujiente.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/poke,bowl?lock=45",
+    "customizations": [
+      {
+        "id": "protein",
+        "name": "Proteína",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "surimi", "name": "Surimi", "extraPrice": 0 },
+          { "id": "tuna", "name": "Atún", "extraPrice": 0 },
+          { "id": "chicken", "name": "Pollo", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "toppings",
+        "name": "Toppings",
+        "type": "multiple",
+        "required": true,
+        "minSelections": 4,
+        "maxSelections": 4,
+        "options": [
+          { "id": "cucumber", "name": "Pepino", "extraPrice": 0 },
+          { "id": "carrot", "name": "Zanahoria", "extraPrice": 0 },
+          { "id": "avocado", "name": "Aguacate", "extraPrice": 0 },
+          { "id": "edamame", "name": "Edamame", "extraPrice": 0 },
+          { "id": "mango", "name": "Mango", "extraPrice": 0 },
+          { "id": "cream-cheese", "name": "Queso crema", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "crunchy",
+        "name": "Crujiente",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "sesame", "name": "Ajonjolí", "extraPrice": 0 },
+          { "id": "peanut", "name": "Cacahuate", "extraPrice": 0 },
+          { "id": "fried-onion", "name": "Cebolla crujiente", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "extras",
+        "name": "Extras",
+        "type": "multiple",
+        "required": false,
+        "maxSelections": 2,
+        "options": [
+          { "id": "extra-protein", "name": "Proteína extra", "extraPrice": 18 },
+          { "id": "eel", "name": "Anguila", "extraPrice": 10 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "46",
+    "name": "Baguette",
+    "description": "Baguette crujiente rellena estilo cafetería.",
+    "price": 70,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/baguette,sandwich?lock=46"
+  },
+  {
+    "id": "47",
+    "name": "Ensalada Rusa",
+    "description": "Ensalada cremosa de papa y vegetales.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/potato,salad?lock=47"
+  },
+  {
+    "id": "48",
+    "name": "Hamburguesa de Pollo",
+    "description": "Hamburguesa preparada con pollo y vegetales.",
+    "price": 70,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chicken,burger?lock=48"
+  },
+  {
+    "id": "49",
+    "name": "Sincronizadas (2)",
+    "description": "Dos tortillas con jamón y queso fundido.",
+    "price": 60,
+    "category": "Pancita llena, corazón contento",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/quesadilla,cheese?lock=49"
+  },
+  {
+    "id": "50",
+    "name": "Carlota de Limón",
+    "description": "Postre frío de limón con base de yogur.",
+    "price": 36,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/lemon,dessert?lock=50"
+  },
+  {
+    "id": "51",
+    "name": "Cheesecake de Lotus",
+    "description": "Cheesecake cremoso con sabor a galleta Lotus.",
+    "price": 45,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/lotus,cheesecake?lock=51"
+  },
+  {
+    "id": "52",
+    "name": "Tiramisú",
+    "description": "Postre cremoso con café, cacao y suave bizcocho.",
+    "price": 45,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/tiramisu,dessert?lock=52"
+  },
+  {
+    "id": "53",
+    "name": "Gelatina Mosaico",
+    "description": "Gelatina cremosa con coloridos cubos de sabores.",
+    "price": 30,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/jelly,dessert?lock=53"
+  },
+  {
+    "id": "54",
+    "name": "Panqué",
+    "description": "Rebanada de panqué suave y esponjoso.",
+    "price": 40,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/pound,cake?lock=54"
+  },
+  {
+    "id": "55",
+    "name": "Brownie",
+    "description": "Brownie de chocolate, suave y chocolatoso.",
+    "price": 40,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/chocolate,brownie?lock=55"
+  },
+  {
+    "id": "56",
+    "name": "Campechanitas",
+    "description": "Crujiente pieza de pan dulce tradicional.",
+    "price": 30,
+    "category": "La vida es corta... pide postre",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/pastry,sweet,bread?lock=56"
+  },
+  {
+    "id": "57",
+    "name": "Maicitos",
+    "description": "Snack de maíz preparado para botanear.",
+    "price": 25,
+    "category": "Snacks",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/corn,snack?lock=57"
+  },
+  {
+    "id": "58",
+    "name": "Tostitos Locos",
+    "description": "Tostitos preparados con diferentes toppings.",
+    "price": 50,
+    "category": "Snacks",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/nachos,chips?lock=58"
+  },
+  {
+    "id": "59",
+    "name": "Platanitos",
+    "description": "Crujientes chips preparados con plátano.",
+    "price": 35,
+    "category": "Snacks",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/banana,chips?lock=59"
+  },
+  {
+    "id": "60",
+    "name": "Obleas",
+    "description": "Obleas ligeras y crujientes para un antojo dulce.",
+    "price": 25,
+    "category": "Snacks",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/wafer,dessert?lock=60"
+  },
+  {
+    "id": "61",
+    "name": "Jugo Verde",
+    "description": "Jugo fresco preparado con frutas y vegetales.",
+    "price": 45,
+    "category": "Mi lado fit",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/green,juice?lock=61"
+  },
+  {
+    "id": "62",
+    "name": "Ensalada",
+    "description": "Ensalada fresca con ingredientes ligeros.",
+    "price": 65,
+    "category": "Mi lado fit",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/healthy,salad?lock=62"
+  },
+  {
+    "id": "63",
+    "name": "Vaso de Fruta con Yogur",
+    "description": "Fruta fresca acompañada con yogur cremoso.",
+    "price": 60,
+    "category": "Mi lado fit",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/fruit,yogurt?lock=63"
+  },
+  {
+    "id": "64",
+    "name": "Uvas Congeladas",
+    "description": "Uvas frías y refrescantes listas para disfrutar.",
+    "price": 30,
+    "category": "Mi lado fit",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/frozen,grapes?lock=64"
+  },
+  {
+    "id": "65",
+    "name": "Shake de Proteína",
+    "description": "Shake cremoso con proteína y sabor a elegir.",
+    "price": 90,
+    "category": "Hoy sí voy al gym",
+    "available": true,
+    "image": "https://loremflickr.com/640/480/protein,shake?lock=65",
+    "customizations": [
+      {
+        "id": "flavor",
+        "name": "Sabor",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "berries", "name": "Frutos rojos", "extraPrice": 0 },
+          { "id": "cacao", "name": "Cacao", "extraPrice": 0 },
+          { "id": "strawberry", "name": "Fresa", "extraPrice": 0 }
+        ]
+      },
+      {
+        "id": "milk",
+        "name": "Tipo de leche",
+        "type": "single",
+        "required": true,
+        "options": [
+          { "id": "regular", "name": "Regular", "extraPrice": 0 },
+          { "id": "almond", "name": "Almendras", "extraPrice": 12 },
+          { "id": "rice", "name": "Arroz", "extraPrice": 12 }
+        ]
+      }
+    ]
+  }
+]
