@@ -91,17 +91,6 @@ export default function CartScreen() {
     return () => clearInterval(timer);
   }, [latestOrderAt]);
 
-  const confirmClearCart = () => {
-    Alert.alert(
-      'Vaciar carrito',
-      '¿Quieres eliminar todos los productos del carrito?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Vaciar', style: 'destructive', onPress: clearCart },
-      ]
-    );
-  };
-
   const submitOrder = () => {
     const result = placeOrder();
 
@@ -132,7 +121,7 @@ export default function CartScreen() {
             </View>
             {cart.length > 0 && (
               <Pressable
-                onPress={confirmClearCart}
+                onPress={clearCart}
                 accessibilityRole="button"
                 accessibilityLabel="Vaciar todo el carrito"
               >
