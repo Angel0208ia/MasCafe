@@ -4,7 +4,7 @@
     "name": "Americano",
     "description": "Espresso con agua caliente, de sabor intenso y aromático.",
     "price": 45,
-    "category": "Necesito despertar",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/americano,coffee?lock=1",
     "customizations": [
@@ -25,7 +25,7 @@
     "name": "Cappuccino",
     "description": "Espresso con leche vaporizada y espuma cremosa.",
     "price": 60,
-    "category": "Necesito despertar",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/cappuccino,coffee?lock=2",
     "customizations": [
@@ -47,7 +47,7 @@
     "name": "Latte",
     "description": "Espresso suave con abundante leche vaporizada.",
     "price": 60,
-    "category": "Necesito despertar",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/latte,coffee?lock=3",
     "customizations": [
@@ -69,7 +69,7 @@
     "name": "Espresso",
     "description": "Café concentrado de sabor intenso y aromático.",
     "price": 35,
-    "category": "Necesito despertar",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/espresso,coffee?lock=4",
     "customizations": [
@@ -90,7 +90,7 @@
     "name": "Moka",
     "description": "Espresso con leche y un delicioso toque de chocolate.",
     "price": 60,
-    "category": "Necesito despertar",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/mocha,coffee?lock=5",
     "customizations": [
@@ -112,7 +112,7 @@
     "name": "Iced Coffee Bear",
     "description": "Café frío y cremoso servido con hielo.",
     "price": 55,
-    "category": "Para los milk lovers",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/iced,coffee?lock=6",
     "customizations": [
@@ -157,7 +157,7 @@
     "name": "Matcha",
     "description": "Bebida cremosa preparada con té verde matcha.",
     "price": 65,
-    "category": "Para los milk lovers",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/matcha,latte?lock=7",
     "customizations": [
@@ -201,7 +201,7 @@
     "name": "Matcha Griego",
     "description": "Matcha cremoso con un toque estilo griego.",
     "price": 70,
-    "category": "Para los milk lovers",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/matcha,yogurt?lock=8"
   },
@@ -210,7 +210,7 @@
     "name": "Chai",
     "description": "Té especiado con leche, aromático y cremoso.",
     "price": 60,
-    "category": "Para los milk lovers",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/chai,latte?lock=9",
     "customizations": [
@@ -232,7 +232,7 @@
     "name": "Chocolate Caliente",
     "description": "Chocolate caliente, dulce y cremoso.",
     "price": 55,
-    "category": "Para los milk lovers",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/hot,chocolate?lock=10",
     "customizations": [
@@ -254,7 +254,7 @@
     "name": "Affogato",
     "description": "Helado acompañado con una carga de espresso.",
     "price": 70,
-    "category": "Para los milk lovers",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/affogato,coffee?lock=11"
   },
@@ -263,7 +263,7 @@
     "name": "Mazapán Latte",
     "description": "Latte cremoso con sabor dulce a mazapán.",
     "price": 50,
-    "category": "Para los milk lovers",
+    "category": "Café",
     "available": true,
     "image": "https://loremflickr.com/640/480/latte,peanut?lock=12",
     "customizations": [
@@ -285,7 +285,7 @@
     "name": "Té",
     "description": "Té ligero disponible frío o caliente.",
     "price": 30,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/tea,drink?lock=13",
     "customizations": [
@@ -317,7 +317,7 @@
     "name": "Tisana",
     "description": "Infusión frutal disponible fría o caliente.",
     "price": 50,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/fruit,tea?lock=14",
     "customizations": [
@@ -349,7 +349,7 @@
     "name": "Limonada Lavanda",
     "description": "Limonada refrescante con un toque floral.",
     "price": 50,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/lavender,lemonade?lock=15",
     "customizations": [
@@ -372,7 +372,7 @@
     "name": "Agua Fresca",
     "description": "Bebida fresca preparada con sabores naturales.",
     "price": 25,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/agua,fresca?lock=16",
     "customizations": [
@@ -394,7 +394,7 @@
     "name": "Agua 500 ml",
     "description": "Botella de agua natural de 500 ml.",
     "price": 15,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/water,bottle?lock=17"
   },
@@ -403,7 +403,7 @@
     "name": "Refresher",
     "description": "Bebida fría, ligera y refrescante.",
     "price": 55,
-    "category": "Hoy no quiero café",
+    "category": "Bebidas",
     "available": true,
     "image": "https://loremflickr.com/640/480/refreshing,fruit,drink?lock=18",
     "customizations": [

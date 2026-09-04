@@ -23,9 +23,6 @@ export type CategoryOption = {
 const initialProducts = productsData as Product[];
 
 const CATEGORY_LABELS: Record<string, string> = {
-  'Necesito despertar': 'Café',
-  'Para los milk lovers': 'Con leche',
-  'Hoy no quiero café': 'Sin café',
   Licuados: 'Licuados',
   Frappés: 'Frappés',
   Granizados: 'Granizados',
