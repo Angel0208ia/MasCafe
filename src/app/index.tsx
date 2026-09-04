@@ -80,29 +80,38 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Promociones destacadas</Text>
 
-        <View style={styles.promoCard}>
-          <View style={styles.promoCircleTop} />
-          <View style={styles.promoCircleBottom} />
+        <Pressable
+          style={({ pressed }) => [styles.promoPosterCard, pressed && styles.pressed]}
+          onPress={openMenu}
+          accessibilityRole="button"
+          accessibilityLabel="Ver promociones de Más Café"
+        >
+          <Image
+            source={require('../../assets/images/promociones-semanales.jpeg')}
+            style={styles.promoPoster}
+            resizeMode="cover"
+          />
+        </Pressable>
 
-          <View style={styles.promoBadge}>
-            <Ionicons name="sparkles" size={14} color={colors.primary} />
-            <Text style={styles.promoBadgeText}>PRÓXIMAMENTE</Text>
+        <View style={styles.promoDetails}>
+          <View style={styles.promoDetailCard}>
+            <View style={styles.promoDayBadge}>
+              <Text style={styles.promoDay}>MARTES</Text>
+            </View>
+            <View style={styles.promoDetailContent}>
+              <Text style={styles.promoDetailTitle}>Segundo cappuccino por $45</Text>
+              <Text style={styles.promoDetailText}>Compra un cappuccino y aprovecha el precio especial.</Text>
+            </View>
           </View>
 
-          <View style={styles.promoIcon}>
-            <Ionicons name="pricetag-outline" size={30} color={colors.onPrimary} />
-          </View>
-
-          <Text style={styles.promoTitle}>Algo rico está por llegar</Text>
-          <Text style={styles.promoText}>
-            Aquí encontrarás los combos y descuentos disponibles de Más Café.
-          </Text>
-
-          <View style={styles.promoFooter}>
-            <Ionicons name="notifications-outline" size={17} color="#F7E8D5" />
-            <Text style={styles.promoFooterText}>
-              Las promociones aparecerán cuando estén disponibles.
-            </Text>
+          <View style={styles.promoDetailCard}>
+            <View style={[styles.promoDayBadge, styles.promoDayBadgeGreen]}>
+              <Text style={styles.promoDay}>JUEVES</Text>
+            </View>
+            <View style={styles.promoDetailContent}>
+              <Text style={styles.promoDetailTitle}>Brownie + matcha por $90</Text>
+              <Text style={styles.promoDetailText}>Disfruta el combo válido durante los jueves.</Text>
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -247,82 +256,61 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
   },
-  promoCard: {
-    minHeight: 250,
+  promoPosterCard: {
+    width: '100%',
     overflow: 'hidden',
-    padding: spacing.xl,
     borderRadius: radius.lg,
-    backgroundColor: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  promoCircleTop: {
-    position: 'absolute',
-    top: -65,
-    right: -45,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  promoPoster: {
+    width: '100%',
+    aspectRatio: 1086 / 1448,
   },
-  promoCircleBottom: {
-    position: 'absolute',
-    bottom: -80,
-    left: -55,
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  promoDetails: {
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
-  promoBadge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    backgroundColor: '#F7E8D5',
-  },
-  promoBadgeText: {
-    fontSize: font.tiny,
-    fontWeight: '800',
-    color: colors.primary,
-  },
-  promoIcon: {
-    position: 'absolute',
-    top: spacing.xl,
-    right: spacing.xl,
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-  },
-  promoTitle: {
-    maxWidth: 260,
-    marginTop: spacing.xl,
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.onPrimary,
-  },
-  promoText: {
-    maxWidth: 295,
-    marginTop: spacing.sm,
-    fontSize: font.small,
-    lineHeight: 20,
-    color: '#F7E8D5',
-  },
-  promoFooter: {
+  promoDetailCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xl,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
   },
-  promoFooterText: {
-    flex: 1,
+  promoDayBadge: {
+    minWidth: 62,
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: '#E9580C',
+  },
+  promoDayBadgeGreen: {
+    backgroundColor: '#688B3A',
+  },
+  promoDay: {
     fontSize: font.tiny,
-    lineHeight: 17,
-    color: '#F7E8D5',
+    fontWeight: '800',
+    color: colors.onPrimary,
+  },
+  promoDetailContent: {
+    flex: 1,
+  },
+  promoDetailTitle: {
+    fontSize: font.small,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  promoDetailText: {
+    marginTop: 2,
+    fontSize: font.tiny,
+    lineHeight: 15,
+    color: colors.muted,
   },
   pressed: {
     opacity: 0.75,
