@@ -115,7 +115,9 @@ export default function OrdersScreen() {
                       ? `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
                       : 'Ya puedes realizar otro pedido'}
                   </Text>
-                  <Text style={styles.cooldownText}>Se permite un pedido cada 30 minutos.</Text>
+                  <Text style={styles.cooldownText}>
+                    Por el momento solo se permite un pedido cada 30 minutos.
+                  </Text>
                 </View>
               </View>
             )}

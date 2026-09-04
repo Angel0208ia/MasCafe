@@ -48,7 +48,7 @@ export default function ProductsScreen() {
         ListHeaderComponent={
           <View>
             <Text style={styles.title}>Más Café</Text>
-            <Text style={styles.subtitle}>Campus Central · Pide y recoge</Text>
+            <Text style={styles.subtitle}>Campus Principal · Pide y recoge</Text>
             <Text style={styles.categoriesTitle}>Categorías</Text>
 
             <CategoryFilter
