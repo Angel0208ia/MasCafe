@@ -37,3 +37,17 @@ export const font = {
   small: 13,
   tiny: 11,
 };
+
+export const layout = {
+  contentMaxWidth: 1120,
+  narrowMaxWidth: 820,
+  detailMaxWidth: 1040,
+  tabletBreakpoint: 720,
+  desktopBreakpoint: 960,
+};
+
+export function getScreenPadding(width: number): number {
+  if (width < 360) return spacing.md;
+  if (width >= layout.tabletBreakpoint) return spacing.xl;
+  return spacing.lg;
+}

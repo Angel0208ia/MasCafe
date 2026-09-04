@@ -1,11 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
 import BottomNav from '../../components/BottomNav';
-import { colors, font, radius, spacing } from '../../constants/theme';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
 import {
   MAX_ITEMS_PER_ORDER,
   ORDER_COOLDOWN_MS,
@@ -86,6 +94,7 @@ function CartProduct({
 
 export default function CartScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const cart = useProductsStore((state) => state.cart);
   const latestOrderAt = useProductsStore((state) => state.orders[0]?.createdAt ?? null);
   const clearCart = useProductsStore((state) => state.clearCart);
@@ -97,6 +106,7 @@ export default function CartScreen() {
   const remainingMs = latestOrderAt
     ? Math.max(0, latestOrderAt + ORDER_COOLDOWN_MS - now)
     : 0;
+  const horizontalPadding = getScreenPadding(width);
 
   useEffect(() => {
     if (!latestOrderAt) return;
@@ -154,13 +164,14 @@ export default function CartScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <FlatList
+        style={styles.list}
         data={cart}
         keyExtractor={(item) => item.cartItemId}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.header}>
-            <View>
+            <View style={styles.headerText}>
               <Text style={styles.title}>Tu carrito</Text>
               <Text style={styles.subtitle}>Revisa tu pedido antes de continuar</Text>
             </View>
@@ -229,7 +240,13 @@ export default function CartScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  list: { width: '100%' },
+  content: {
+    width: '100%',
+    maxWidth: layout.narrowMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.xl,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -237,6 +254,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     marginBottom: spacing.xl,
   },
+  headerText: { flex: 1, marginRight: spacing.md },
   title: { fontSize: 28, fontWeight: '800', color: colors.text },
   subtitle: { marginTop: spacing.xs, fontSize: font.small, color: colors.muted },
   clearText: { fontSize: font.small, fontWeight: '700', color: colors.danger },

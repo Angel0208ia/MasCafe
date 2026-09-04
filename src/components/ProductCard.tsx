@@ -1,21 +1,30 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 import type { Product } from '../types/product';
 
 type ProductCardProps = {
   product: Product;
   onPress: (id: string) => void;
+  style?: StyleProp<ViewStyle>;
 };
 
-export default function ProductCard({ product, onPress }: ProductCardProps) {
+export default function ProductCard({ product, onPress, style }: ProductCardProps) {
   const hasPriceOptions = product.customizations?.some((group) =>
     group.options.some((option) => option.extraPrice > 0)
   );
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed]}
       onPress={() => onPress(product.id)}
       disabled={!product.available}
       accessibilityRole="button"

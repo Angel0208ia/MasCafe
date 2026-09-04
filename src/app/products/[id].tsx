@@ -9,9 +9,10 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
-import { colors, font, radius, spacing } from '../../constants/theme';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
 import { MAX_ITEMS_PER_ORDER, useProductsStore } from '../../store/productsStore';
 import type { CustomizationGroup, Product, SelectedCustomization } from '../../types/product';
 
@@ -39,6 +40,7 @@ function createInitialSelections(product: Product): SelectionState {
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const product = useProductsStore((state) => state.getProductById(id));
   const addToCart = useProductsStore((state) => state.addToCart);
   const cartQuantity = useProductsStore((state) =>
@@ -81,6 +83,8 @@ export default function ProductDetailScreen() {
 
   const availableSlots = MAX_ITEMS_PER_ORDER - cartQuantity;
   const canAddToCart = availableSlots > 0;
+  const horizontalPadding = getScreenPadding(width);
+  const isDesktop = width >= layout.desktopBreakpoint;
 
   if (!product) {
     return (
@@ -200,115 +204,123 @@ export default function ProductDetailScreen() {
 
   return (
     <>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Image source={{ uri: product.image }} style={styles.image} />
+      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+        <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
+          <View style={[styles.productLayout, isDesktop && styles.productLayoutDesktop]}>
+            <View style={[styles.summaryColumn, isDesktop && styles.summaryColumnDesktop]}>
+              <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
 
-      <View style={styles.header}>
-        <Text style={styles.category}>{product.category}</Text>
-        <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.description}>{product.description}</Text>
-        <Text style={styles.price}>
-          {hasPriceOptions ? 'Desde ' : ''}${product.price.toFixed(2)}
-        </Text>
-      </View>
-
-      {visibleGroups.map((group) => {
-        const selectedIds = selections[group.id] ?? [];
-        const minimum = group.minSelections ?? 0;
-        const maximum = group.maxSelections;
-        const selectionHelp = group.type === 'multiple'
-          ? minimum === maximum
-            ? `Elige ${minimum}`
-            : `Elige ${minimum}${maximum ? ` a ${maximum}` : ''}`
-          : group.required
-            ? 'Elige una opción'
-            : 'Opcional';
-
-        return (
-          <View key={group.id} style={styles.customizationSection}>
-            <View style={styles.groupHeader}>
-              <Text style={styles.sectionTitle}>{group.name}</Text>
-              <Text style={styles.groupHelp}>{selectionHelp}</Text>
+              <View style={styles.header}>
+                <Text style={styles.category}>{product.category}</Text>
+                <Text style={styles.name}>{product.name}</Text>
+                <Text style={styles.description}>{product.description}</Text>
+                <Text style={styles.price}>
+                  {hasPriceOptions ? 'Desde ' : ''}${product.price.toFixed(2)}
+                </Text>
+              </View>
             </View>
 
-            {group.options.map((option) => {
-              const isSelected = selectedIds.includes(option.id);
+            <View style={[styles.formColumn, isDesktop && styles.formColumnDesktop]}>
+              {visibleGroups.map((group) => {
+                const selectedIds = selections[group.id] ?? [];
+                const minimum = group.minSelections ?? 0;
+                const maximum = group.maxSelections;
+                const selectionHelp = group.type === 'multiple'
+                  ? minimum === maximum
+                    ? `Elige ${minimum}`
+                    : `Elige ${minimum}${maximum ? ` a ${maximum}` : ''}`
+                  : group.required
+                    ? 'Elige una opción'
+                    : 'Opcional';
 
-              return (
-                <Pressable
-                  key={option.id}
-                  style={[styles.option, isSelected && styles.optionSelected]}
-                  onPress={() => selectOption(group, option.id)}
-                >
-                  <View style={[styles.selector, isSelected && styles.selectorSelected]}>
-                    {isSelected && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+                return (
+                  <View key={group.id} style={styles.customizationSection}>
+                    <View style={styles.groupHeader}>
+                      <Text style={styles.sectionTitle}>{group.name}</Text>
+                      <Text style={styles.groupHelp}>{selectionHelp}</Text>
+                    </View>
+
+                    {group.options.map((option) => {
+                      const isSelected = selectedIds.includes(option.id);
+
+                      return (
+                        <Pressable
+                          key={option.id}
+                          style={[styles.option, isSelected && styles.optionSelected]}
+                          onPress={() => selectOption(group, option.id)}
+                        >
+                          <View style={[styles.selector, isSelected && styles.selectorSelected]}>
+                            {isSelected && <Ionicons name="checkmark" size={14} color={colors.onPrimary} />}
+                          </View>
+                          <Text style={styles.optionName}>{option.name}</Text>
+                          <Text style={styles.optionPrice}>
+                            {option.extraPrice > 0 ? `+$${option.extraPrice.toFixed(2)}` : 'Incluido'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                  <Text style={styles.optionName}>{option.name}</Text>
-                  <Text style={styles.optionPrice}>
-                    {option.extraPrice > 0 ? `+$${option.extraPrice.toFixed(2)}` : 'Incluido'}
-                  </Text>
-                </Pressable>
-              );
-            })}
+                );
+              })}
+
+              <View style={styles.customizationSection}>
+                <Text style={styles.sectionTitle}>Indicaciones especiales</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Ej. Sin azúcar o bien caliente"
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  maxLength={140}
+                  textAlignVertical="top"
+                />
+                <Text style={styles.characterCount}>{notes.length}/140</Text>
+              </View>
+
+              <View style={styles.quantityRow}>
+                <Text style={styles.sectionTitle}>Cantidad</Text>
+                <View style={styles.quantityControl}>
+                  <Pressable
+                    style={styles.quantityButton}
+                    onPress={() => setQuantity((current) => Math.max(1, current - 1))}
+                  >
+                    <Ionicons name="remove" size={20} color={colors.primary} />
+                  </Pressable>
+                  <Text style={styles.quantityText}>{quantity}</Text>
+                  <Pressable
+                    style={styles.quantityButton}
+                    onPress={() => {
+                      if (quantity >= availableSlots) {
+                        setDialog({
+                          title: 'Límite de artículos',
+                          message: `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`,
+                          icon: 'bag-handle-outline',
+                        });
+                        return;
+                      }
+
+                      setQuantity((current) => current + 1);
+                    }}
+                  >
+                    <Ionicons name="add" size={20} color={colors.primary} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <Pressable
+                style={[styles.addButton, !canAddToCart && styles.addButtonDisabled]}
+                onPress={addProduct}
+                disabled={!canAddToCart}
+              >
+                <Text style={styles.addButtonText}>
+                  {canAddToCart ? 'Agregar al carrito' : 'Carrito lleno'}
+                </Text>
+                <Text style={styles.addButtonPrice}>${(unitPrice * quantity).toFixed(2)}</Text>
+              </Pressable>
+            </View>
           </View>
-        );
-      })}
-
-      <View style={styles.customizationSection}>
-        <Text style={styles.sectionTitle}>Indicaciones especiales</Text>
-        <TextInput
-          style={styles.notesInput}
-          value={notes}
-          onChangeText={setNotes}
-          placeholder="Ej. Sin azúcar o bien caliente"
-          placeholderTextColor={colors.muted}
-          multiline
-          maxLength={140}
-          textAlignVertical="top"
-        />
-        <Text style={styles.characterCount}>{notes.length}/140</Text>
-      </View>
-
-      <View style={styles.quantityRow}>
-        <Text style={styles.sectionTitle}>Cantidad</Text>
-        <View style={styles.quantityControl}>
-          <Pressable
-            style={styles.quantityButton}
-            onPress={() => setQuantity((current) => Math.max(1, current - 1))}
-          >
-            <Ionicons name="remove" size={20} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.quantityText}>{quantity}</Text>
-          <Pressable
-            style={styles.quantityButton}
-            onPress={() => {
-              if (quantity >= availableSlots) {
-                setDialog({
-                  title: 'Límite de artículos',
-                  message: `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`,
-                  icon: 'bag-handle-outline',
-                });
-                return;
-              }
-
-              setQuantity((current) => current + 1);
-            }}
-          >
-            <Ionicons name="add" size={20} color={colors.primary} />
-          </Pressable>
         </View>
-      </View>
-
-      <Pressable
-        style={[styles.addButton, !canAddToCart && styles.addButtonDisabled]}
-        onPress={addProduct}
-        disabled={!canAddToCart}
-      >
-        <Text style={styles.addButtonText}>
-          {canAddToCart ? 'Agregar al carrito' : 'Carrito lleno'}
-        </Text>
-        <Text style={styles.addButtonPrice}>${(unitPrice * quantity).toFixed(2)}</Text>
-      </Pressable>
       </ScrollView>
 
       <AppDialog
@@ -325,10 +337,26 @@ export default function ProductDetailScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  scrollContent: { width: '100%', alignItems: 'center' },
+  content: {
+    width: '100%',
+    maxWidth: layout.detailMaxWidth,
+    paddingTop: spacing.lg,
+    paddingBottom: 40,
+  },
+  productLayout: { width: '100%' },
+  productLayoutDesktop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 32,
+  },
+  summaryColumn: { width: '100%' },
+  summaryColumnDesktop: { flex: 0.85 },
+  formColumn: { width: '100%' },
+  formColumnDesktop: { flex: 1.15 },
   image: {
     width: '100%',
-    height: 220,
+    aspectRatio: 4 / 3,
     borderRadius: radius.lg,
     backgroundColor: colors.thumb,
   },

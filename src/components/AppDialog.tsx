@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 
 export type AppDialogAction = {
@@ -25,6 +25,9 @@ export default function AppDialog({
   actions = [{ label: 'Entendido' }],
   onClose,
 }: AppDialogProps) {
+  const { width } = useWindowDimensions();
+  const stackActions = width < 360 && actions.length > 1;
+
   return (
     <Modal
       visible={visible}
@@ -44,7 +47,7 @@ export default function AppDialog({
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
 
-          <View style={styles.actions}>
+          <View style={[styles.actions, stackActions && styles.actionsStacked]}>
             {actions.map((action) => {
               const variant = action.variant ?? 'primary';
 
@@ -131,6 +134,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginTop: spacing.xl,
+  },
+  actionsStacked: {
+    flexDirection: 'column-reverse',
   },
   button: {
     flex: 1,

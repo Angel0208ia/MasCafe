@@ -1,15 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../../components/BottomNav';
 import CategoryFilter from '../../components/CategoryFilter';
 import ProductCard from '../../components/ProductCard';
-import { colors, font, spacing } from '../../constants/theme';
+import { colors, font, getScreenPadding, layout, spacing } from '../../constants/theme';
 import { filterByCategory, useProductsStore } from '../../store/productsStore';
 
 export default function ProductsScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const products = useProductsStore((state) => state.products);
   const selectedCategory = useProductsStore((state) => state.selectedCategory);
   const setCategory = useProductsStore((state) => state.setCategory);
@@ -23,12 +24,26 @@ export default function ProductsScreen() {
   const currentCategory =
     categories.find((category) => category.value === selectedCategory)?.label ?? 'Todos';
 
+  const horizontalPadding = getScreenPadding(width);
+  const listWidth = Math.min(width, layout.contentMaxWidth);
+  const availableWidth = listWidth - horizontalPadding * 2;
+  const columns = width >= 1100 ? 3 : width >= layout.tabletBreakpoint ? 2 : 1;
+  const columnGap = spacing.lg;
+  const cardWidth = (availableWidth - columnGap * (columns - 1)) / columns;
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <FlatList
+        key={`products-${columns}`}
+        style={styles.list}
         data={visibleProducts}
+        numColumns={columns}
         keyExtractor={(product) => product.id}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingHorizontal: horizontalPadding },
+        ]}
+        columnWrapperStyle={columns > 1 ? styles.columns : undefined}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
@@ -53,7 +68,11 @@ export default function ProductsScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <ProductCard product={item} onPress={(id) => router.push(`/products/${id}`)} />
+          <ProductCard
+            product={item}
+            style={{ width: cardWidth, maxWidth: cardWidth }}
+            onPress={(id) => router.push(`/products/${id}`)}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -72,9 +91,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  list: {
+    width: '100%',
+  },
   content: {
-    paddingHorizontal: spacing.lg,
+    width: '100%',
+    maxWidth: layout.contentMaxWidth,
+    alignSelf: 'center',
     paddingBottom: spacing.xl,
+  },
+  columns: {
+    gap: spacing.lg,
   },
   title: {
     fontSize: 28,

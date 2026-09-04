@@ -1,13 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
-import { colors, font, radius, spacing } from '../constants/theme';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '../constants/theme';
 import { ALL_CATEGORIES, useProductsStore } from '../store/productsStore';
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const setCategory = useProductsStore((state) => state.setCategory);
   const cartCount = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
@@ -18,13 +27,24 @@ export default function HomeScreen() {
     router.push('/products');
   };
 
+  const horizontalPadding = getScreenPadding(width);
+  const pageWidth = Math.min(width, layout.contentMaxWidth);
+  const contentWidth = pageWidth - horizontalPadding * 2;
+  const isDesktop = width >= layout.desktopBreakpoint;
+  const isCompact = width < 360;
+  const posterWidth = isDesktop
+    ? Math.min(500, contentWidth * 0.55)
+    : contentWidth;
+  const posterHeight = posterWidth * (1448 / 1086);
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.page}>
         <View style={styles.header}>
           <View>
             <Text style={styles.brand}>Más Café</Text>
@@ -46,7 +66,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.hero}>
+        <View style={[styles.hero, isDesktop && styles.heroDesktop, isCompact && styles.heroCompact]}>
           <View style={styles.heroContent}>
             <View style={styles.campusBadge}>
               <Ionicons name="location-outline" size={14} color={colors.primary} />
@@ -68,10 +88,10 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.heroIcon}>
+          <View style={[styles.heroIcon, isDesktop && styles.heroIconDesktop, isCompact && styles.heroIconCompact]}>
             <Image
               source={require('../../assets/images/logo-mas-cafe.png')}
-              style={styles.heroLogo}
+              style={[styles.heroLogo, isDesktop && styles.heroLogoDesktop, isCompact && styles.heroLogoCompact]}
               resizeMode="contain"
               accessibilityLabel="Logo de Más Café"
             />
@@ -80,39 +100,46 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Promociones destacadas</Text>
 
-        <Pressable
-          style={({ pressed }) => [styles.promoPosterCard, pressed && styles.pressed]}
-          onPress={openMenu}
-          accessibilityRole="button"
-          accessibilityLabel="Ver promociones de Más Café"
-        >
-          <Image
-            source={require('../../assets/images/promociones-semanales.jpeg')}
-            style={styles.promoPoster}
-            resizeMode="cover"
-          />
-        </Pressable>
+        <View style={[styles.promotions, isDesktop && styles.promotionsDesktop]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.promoPosterCard,
+              { width: posterWidth, height: posterHeight },
+              pressed && styles.pressed,
+            ]}
+            onPress={openMenu}
+            accessibilityRole="button"
+            accessibilityLabel="Ver promociones de Más Café"
+          >
+            <Image
+              source={require('../../assets/images/promociones-semanales.jpeg')}
+              style={{ width: posterWidth, height: posterHeight }}
+              resizeMode="contain"
+            />
+          </Pressable>
 
-        <View style={styles.promoDetails}>
-          <View style={styles.promoDetailCard}>
-            <View style={styles.promoDayBadge}>
-              <Text style={styles.promoDay}>MARTES</Text>
+          <View style={[styles.promoDetails, isDesktop && styles.promoDetailsDesktop]}>
+            <View style={styles.promoDetailCard}>
+              <View style={styles.promoDayBadge}>
+                <Text style={styles.promoDay}>MARTES</Text>
+              </View>
+              <View style={styles.promoDetailContent}>
+                <Text style={styles.promoDetailTitle}>Segundo cappuccino por $45</Text>
+                <Text style={styles.promoDetailText}>Compra un cappuccino y aprovecha el precio especial.</Text>
+              </View>
             </View>
-            <View style={styles.promoDetailContent}>
-              <Text style={styles.promoDetailTitle}>Segundo cappuccino por $45</Text>
-              <Text style={styles.promoDetailText}>Compra un cappuccino y aprovecha el precio especial.</Text>
+
+            <View style={styles.promoDetailCard}>
+              <View style={[styles.promoDayBadge, styles.promoDayBadgeGreen]}>
+                <Text style={styles.promoDay}>JUEVES</Text>
+              </View>
+              <View style={styles.promoDetailContent}>
+                <Text style={styles.promoDetailTitle}>Brownie + matcha por $90</Text>
+                <Text style={styles.promoDetailText}>Disfruta el combo válido durante los jueves.</Text>
+              </View>
             </View>
           </View>
-
-          <View style={styles.promoDetailCard}>
-            <View style={[styles.promoDayBadge, styles.promoDayBadgeGreen]}>
-              <Text style={styles.promoDay}>JUEVES</Text>
-            </View>
-            <View style={styles.promoDetailContent}>
-              <Text style={styles.promoDetailTitle}>Brownie + matcha por $90</Text>
-              <Text style={styles.promoDetailText}>Disfruta el combo válido durante los jueves.</Text>
-            </View>
-          </View>
+        </View>
         </View>
       </ScrollView>
 
@@ -130,8 +157,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: spacing.lg,
+    width: '100%',
+    alignItems: 'center',
     paddingBottom: 36,
+  },
+  page: {
+    width: '100%',
+    maxWidth: layout.contentMaxWidth,
   },
   header: {
     flexDirection: 'row',
@@ -185,6 +217,14 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.lg,
     backgroundColor: '#EFE1CF',
+  },
+  heroDesktop: {
+    minHeight: 270,
+    padding: spacing.xl,
+  },
+  heroCompact: {
+    minHeight: 205,
+    padding: spacing.md,
   },
   heroContent: {
     flex: 1,
@@ -245,9 +285,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
   },
+  heroIconDesktop: {
+    right: 30,
+    bottom: -35,
+    width: 220,
+    height: 220,
+  },
+  heroIconCompact: {
+    right: -28,
+    width: 115,
+    height: 115,
+  },
   heroLogo: {
     width: 108,
     height: 108,
+  },
+  heroLogoDesktop: {
+    width: 176,
+    height: 176,
+  },
+  heroLogoCompact: {
+    width: 90,
+    height: 90,
   },
   sectionTitle: {
     marginTop: spacing.xl,
@@ -257,20 +316,27 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   promoPosterCard: {
-    width: '100%',
     overflow: 'hidden',
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  promoPoster: {
+  promotions: {
     width: '100%',
-    aspectRatio: 1086 / 1448,
+  },
+  promotionsDesktop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xl,
   },
   promoDetails: {
     gap: spacing.sm,
     marginTop: spacing.md,
+  },
+  promoDetailsDesktop: {
+    flex: 1,
+    marginTop: 0,
   },
   promoDetailCard: {
     flexDirection: 'row',

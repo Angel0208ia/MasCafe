@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../../components/BottomNav';
-import { colors, font, radius, spacing } from '../../constants/theme';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
 import { ORDER_COOLDOWN_MS, useProductsStore } from '../../store/productsStore';
 import type { Order } from '../../types/product';
 
@@ -71,12 +71,14 @@ function OrderCard({ order }: { order: Order }) {
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const orders = useProductsStore((state) => state.orders);
   const [now, setNow] = useState(Date.now());
   const latestOrder = orders[0];
   const remainingMs = latestOrder
     ? Math.max(0, latestOrder.createdAt + ORDER_COOLDOWN_MS - now)
     : 0;
+  const horizontalPadding = getScreenPadding(width);
 
   useEffect(() => {
     if (!latestOrder || remainingMs === 0) return;
@@ -88,9 +90,10 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <FlatList
+        style={styles.list}
         data={orders}
         keyExtractor={(order) => order.id}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
@@ -140,7 +143,13 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
+  list: { width: '100%' },
+  content: {
+    width: '100%',
+    maxWidth: layout.narrowMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.xl,
+  },
   title: { marginTop: spacing.md, fontSize: 28, fontWeight: '800', color: colors.text },
   subtitle: { marginTop: spacing.xs, fontSize: font.small, color: colors.muted },
   cooldownCard: {

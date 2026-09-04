@@ -15,7 +15,8 @@ export default function BottomNav({ active }: BottomNavProps) {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={styles.bar}>
+      <View style={styles.container}>
       <Link href="/" asChild>
         <Pressable
           style={StyleSheet.flatten([
@@ -76,22 +77,30 @@ export default function BottomNav({ active }: BottomNavProps) {
         />
         <Text style={[styles.label, active === 'pedidos' && styles.activeLabel]}>Pedidos</Text>
       </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  bar: {
+    width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.surface,
+  },
   container: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingTop: spacing.sm,
     paddingBottom: spacing.md,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   item: {
-    width: 70,
+    flex: 1,
+    maxWidth: 110,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
