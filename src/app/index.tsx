@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../components/BottomNav';
 import { colors, font, radius, spacing } from '../constants/theme';
@@ -69,7 +69,12 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.heroIcon}>
-            <Ionicons name="cafe" size={54} color={colors.primary} />
+            <Image
+              source={require('../../assets/images/logo-mas-cafe.png')}
+              style={styles.heroLogo}
+              resizeMode="contain"
+              accessibilityLabel="Logo de Más Café"
+            />
           </View>
         </View>
 
@@ -229,8 +234,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.38)',
-    transform: [{ rotate: '-8deg' }],
+    backgroundColor: colors.primary,
+  },
+  heroLogo: {
+    width: 108,
+    height: 108,
   },
   sectionTitle: {
     marginTop: spacing.xl,
