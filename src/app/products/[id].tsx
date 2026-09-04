@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -11,11 +10,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
 import { colors, font, radius, spacing } from '../../constants/theme';
 import { MAX_ITEMS_PER_ORDER, useProductsStore } from '../../store/productsStore';
 import type { CustomizationGroup, Product, SelectedCustomization } from '../../types/product';
 
 type SelectionState = Record<string, string[]>;
+
+type DialogState = {
+  title: string;
+  message: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  actions?: AppDialogAction[];
+};
 
 function createInitialSelections(product: Product): SelectionState {
   const initial: SelectionState = {};
@@ -40,6 +47,7 @@ export default function ProductDetailScreen() {
   const [selections, setSelections] = useState<SelectionState>({});
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
+  const [dialog, setDialog] = useState<DialogState | null>(null);
 
   const hasPriceOptions = product?.customizations?.some((group) =>
     group.options.some((option) => option.extraPrice > 0)
@@ -86,6 +94,22 @@ export default function ProductDetailScreen() {
   }
 
   const selectOption = (group: CustomizationGroup, optionId: string) => {
+    const selectedIds = selections[group.id] ?? [];
+
+    if (
+      group.type === 'multiple' &&
+      !selectedIds.includes(optionId) &&
+      group.maxSelections &&
+      selectedIds.length >= group.maxSelections
+    ) {
+      setDialog({
+        title: 'Límite alcanzado',
+        message: `Puedes elegir hasta ${group.maxSelections} opciones.`,
+        icon: 'information-circle-outline',
+      });
+      return;
+    }
+
     setSelections((current) => {
       const currentIds = current[group.id] ?? [];
 
@@ -107,11 +131,6 @@ export default function ProductDetailScreen() {
         return { ...current, [group.id]: currentIds.filter((idValue) => idValue !== optionId) };
       }
 
-      if (group.maxSelections && currentIds.length >= group.maxSelections) {
-        Alert.alert('Límite alcanzado', `Puedes elegir hasta ${group.maxSelections} opciones.`);
-        return current;
-      }
-
       return { ...current, [group.id]: [...currentIds, optionId] };
     });
   };
@@ -122,12 +141,13 @@ export default function ProductDetailScreen() {
       const minimum = group.minSelections ?? (group.required ? 1 : 0);
 
       if (selectedCount < minimum) {
-        Alert.alert(
-          'Falta una elección',
-          minimum > 1
+        setDialog({
+          title: 'Falta una elección',
+          message: minimum > 1
             ? `Selecciona ${minimum} opciones en “${group.name}”.`
-            : `Selecciona una opción en “${group.name}”.`
-        );
+            : `Selecciona una opción en “${group.name}”.`,
+          icon: 'list-outline',
+        });
         return false;
       }
     }
@@ -159,18 +179,28 @@ export default function ProductDetailScreen() {
     });
 
     if (!result.success) {
-      Alert.alert('Límite de artículos', result.message);
+      setDialog({
+        title: 'Límite de artículos',
+        message: result.message ?? 'El carrito alcanzó el límite permitido.',
+        icon: 'bag-handle-outline',
+      });
       return;
     }
 
-    Alert.alert('Agregado al carrito', `${quantity} × ${product.name}`, [
-      { text: 'Seguir comprando', onPress: () => router.back() },
-      { text: 'Ver carrito', onPress: () => router.replace('/cart') },
-    ]);
+    setDialog({
+      title: 'Agregado al carrito',
+      message: `${quantity} × ${product.name}`,
+      icon: 'checkmark-circle-outline',
+      actions: [
+        { label: 'Seguir comprando', variant: 'secondary', onPress: () => router.back() },
+        { label: 'Ver carrito', onPress: () => router.replace('/cart') },
+      ],
+    });
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Image source={{ uri: product.image }} style={styles.image} />
 
       <View style={styles.header}>
@@ -253,10 +283,11 @@ export default function ProductDetailScreen() {
             style={styles.quantityButton}
             onPress={() => {
               if (quantity >= availableSlots) {
-                Alert.alert(
-                  'Límite de artículos',
-                  `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`
-                );
+                setDialog({
+                  title: 'Límite de artículos',
+                  message: `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`,
+                  icon: 'bag-handle-outline',
+                });
                 return;
               }
 
@@ -278,7 +309,17 @@ export default function ProductDetailScreen() {
         </Text>
         <Text style={styles.addButtonPrice}>${(unitPrice * quantity).toFixed(2)}</Text>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        icon={dialog?.icon}
+        actions={dialog?.actions}
+        onClose={() => setDialog(null)}
+      />
+    </>
   );
 }
 

@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
 import BottomNav from '../../components/BottomNav';
 import { colors, font, radius, spacing } from '../../constants/theme';
 import {
@@ -12,6 +13,13 @@ import {
 } from '../../store/productsStore';
 import type { CartItem } from '../../types/product';
 
+type DialogState = {
+  title: string;
+  message: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  actions?: AppDialogAction[];
+};
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -19,7 +27,13 @@ function formatRemainingTime(milliseconds: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function CartProduct({ item }: { item: CartItem }) {
+function CartProduct({
+  item,
+  onLimit,
+}: {
+  item: CartItem;
+  onLimit: (message: string) => void;
+}) {
   const increaseQuantity = useProductsStore((state) => state.increaseQuantity);
   const decreaseQuantity = useProductsStore((state) => state.decreaseQuantity);
   const removeFromCart = useProductsStore((state) => state.removeFromCart);
@@ -56,7 +70,7 @@ function CartProduct({ item }: { item: CartItem }) {
               onPress={() => {
                 const result = increaseQuantity(item.cartItemId);
                 if (!result.success) {
-                  Alert.alert('Límite de artículos', result.message);
+                  onLimit(result.message ?? 'El carrito alcanzó el límite permitido.');
                 }
               }}
             >
@@ -77,6 +91,7 @@ export default function CartScreen() {
   const clearCart = useProductsStore((state) => state.clearCart);
   const placeOrder = useProductsStore((state) => state.placeOrder);
   const [now, setNow] = useState(Date.now());
+  const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const total = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const remainingMs = latestOrderAt
@@ -98,12 +113,42 @@ export default function CartScreen() {
       const message = result.reason === 'cooldown'
         ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
         : 'Tu carrito está vacío.';
-      Alert.alert('No se pudo generar el pedido', message);
+      setDialog({
+        title: 'No se pudo generar el pedido',
+        message,
+        icon: 'time-outline',
+      });
       return;
     }
 
-    Alert.alert('Pedido generado', `Tu pedido ${result.order.number} fue recibido.`);
-    router.replace('/orders');
+    setDialog({
+      title: 'Pedido generado',
+      message: `Tu pedido ${result.order.number} fue recibido.`,
+      icon: 'checkmark-circle-outline',
+      actions: [
+        { label: 'Ver pedido', onPress: () => router.replace('/orders') },
+      ],
+    });
+  };
+
+  const confirmClearCart = () => {
+    setDialog({
+      title: 'Vaciar carrito',
+      message: '¿Quieres eliminar todos los productos del carrito?',
+      icon: 'trash-outline',
+      actions: [
+        { label: 'Cancelar', variant: 'secondary' },
+        { label: 'Vaciar', variant: 'danger', onPress: clearCart },
+      ],
+    });
+  };
+
+  const showCartLimit = (message: string) => {
+    setDialog({
+      title: 'Límite de artículos',
+      message,
+      icon: 'bag-handle-outline',
+    });
   };
 
   return (
@@ -121,7 +166,7 @@ export default function CartScreen() {
             </View>
             {cart.length > 0 && (
               <Pressable
-                onPress={clearCart}
+                onPress={confirmClearCart}
                 accessibilityRole="button"
                 accessibilityLabel="Vaciar todo el carrito"
               >
@@ -130,7 +175,7 @@ export default function CartScreen() {
             )}
           </View>
         }
-        renderItem={({ item }) => <CartProduct item={item} />}
+        renderItem={({ item }) => <CartProduct item={item} onLimit={showCartLimit} />}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="cart-outline" size={58} color={colors.chipBorder} />
@@ -170,6 +215,14 @@ export default function CartScreen() {
         }
       />
       <BottomNav active="carrito" />
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        icon={dialog?.icon}
+        actions={dialog?.actions}
+        onClose={() => setDialog(null)}
+      />
     </SafeAreaView>
   );
 }
