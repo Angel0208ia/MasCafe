@@ -8,6 +8,8 @@ import type {
   PlaceOrderResult,
   Product,
 } from '../types/product';
+import { fetchMenu } from '../lib/menuApi';
+import { createAnonymousOrder, fetchTrackedOrders } from '../lib/ordersApi';
 
 export type { CartItem, Product } from '../types/product';
 
@@ -33,16 +35,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   'Hoy sí voy al gym': 'Proteína',
 };
 
-export const CATEGORIES: CategoryOption[] = [
-  { label: ALL_CATEGORIES, value: ALL_CATEGORIES },
-  ...Array.from(new Set(initialProducts.map((product) => product.category))).map(
-    (category) => ({
-      label: CATEGORY_LABELS[category] ?? category,
-      value: category,
-    })
-  ),
-];
-
 export function filterByCategory(products: Product[], category: string): Product[] {
   if (category === ALL_CATEGORIES) return products;
   return products.filter((product) => product.category === category);
@@ -56,22 +48,21 @@ function getCartQuantity(cart: CartItem[]): number {
   return cart.reduce((total, item) => total + item.quantity, 0);
 }
 
-function createOrderNumber(): string {
-  return `MC-${Date.now().toString().slice(-6)}`;
-}
-
 type ProductsState = {
   products: Product[];
   selectedCategory: string;
   cart: CartItem[];
   orders: Order[];
+  isSubmittingOrder: boolean;
   setCategory: (category: string) => void;
   addToCart: (item: NewCartItem) => CartActionResult;
   increaseQuantity: (cartItemId: string) => CartActionResult;
   decreaseQuantity: (cartItemId: string) => void;
   removeFromCart: (cartItemId: string) => void;
   clearCart: () => void;
-  placeOrder: () => PlaceOrderResult;
+  placeOrder: () => Promise<PlaceOrderResult>;
+  loadMenu: () => Promise<void>;
+  loadTrackedOrders: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   getFilteredProducts: () => Product[];
   getCategories: () => CategoryOption[];
@@ -82,6 +73,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   selectedCategory: ALL_CATEGORIES,
   cart: [],
   orders: [],
+  isSubmittingOrder: false,
 
   setCategory: (category) => set({ selectedCategory: category }),
 
@@ -139,11 +131,15 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  placeOrder: () => {
+  placeOrder: async () => {
     const state = get();
 
     if (state.cart.length === 0) {
       return { success: false, reason: 'empty', remainingMs: 0 };
+    }
+
+    if (state.isSubmittingOrder) {
+      return { success: false, reason: 'busy', remainingMs: 0 };
     }
 
     const now = Date.now();
@@ -160,25 +156,54 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       };
     }
 
-    const order: Order = {
-      id: `${now}-${Math.random().toString(36).slice(2, 7)}`,
-      number: createOrderNumber(),
-      items: state.cart,
-      total: state.cart.reduce(
-        (sum, item) => sum + item.unitPrice * item.quantity,
-        0
-      ),
-      createdAt: now,
-      status: 'received',
-    };
+    set({ isSubmittingOrder: true });
 
-    set({ orders: [order, ...state.orders], cart: [] });
-    return { success: true, order };
+    try {
+      const order = await createAnonymousOrder(state.cart);
+      set((current) => ({
+        orders: [order, ...current.orders.filter((item) => item.id !== order.id)],
+        cart: [],
+      }));
+      return { success: true, order };
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'No se pudo conectar con el servidor.';
+      return { success: false, reason: 'network', remainingMs: 0, message };
+    } finally {
+      set({ isSubmittingOrder: false });
+    }
+  },
+
+  loadMenu: async () => {
+    try {
+      const products = await fetchMenu();
+      if (products.length > 0) set({ products });
+    } catch {
+      // El catálogo incluido permite seguir explorando si aún no hay conexión.
+    }
+  },
+
+  loadTrackedOrders: async () => {
+    try {
+      const orders = await fetchTrackedOrders();
+      set({ orders });
+    } catch {
+      // No se borra el estado visible si la red falla temporalmente.
+    }
   },
 
   getProductById: (id) => get().products.find((product) => product.id === id),
 
   getFilteredProducts: () => filterByCategory(get().products, get().selectedCategory),
 
-  getCategories: () => CATEGORIES,
+  getCategories: () => [
+    { label: ALL_CATEGORIES, value: ALL_CATEGORIES },
+    ...Array.from(new Set(get().products.map((product) => product.category))).map((category) => ({
+      label: CATEGORY_LABELS[category] ?? category,
+      value: category,
+    })),
+  ],
 }));

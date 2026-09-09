@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BottomNav from '../../components/BottomNav';
@@ -14,7 +14,12 @@ export default function ProductsScreen() {
   const products = useProductsStore((state) => state.products);
   const selectedCategory = useProductsStore((state) => state.selectedCategory);
   const setCategory = useProductsStore((state) => state.setCategory);
-  const categories = useProductsStore((state) => state.getCategories());
+  const loadMenu = useProductsStore((state) => state.loadMenu);
+  const getCategories = useProductsStore((state) => state.getCategories);
+
+  // getCategories crea el arreglo a partir del menú remoto. Memorizarlo aquí
+  // evita que Zustand reciba una referencia distinta en cada render.
+  const categories = useMemo(() => getCategories(), [getCategories, products]);
 
   const visibleProducts = useMemo(
     () => filterByCategory(products, selectedCategory),
@@ -30,6 +35,10 @@ export default function ProductsScreen() {
   const columns = width >= 1100 ? 3 : width >= layout.tabletBreakpoint ? 2 : 1;
   const columnGap = spacing.lg;
   const cardWidth = (availableWidth - columnGap * (columns - 1)) / columns;
+
+  useEffect(() => {
+    void loadMenu();
+  }, [loadMenu]);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>

@@ -14,6 +14,7 @@ Aplicación móvil de pedidos para la cafetería universitaria. Permite consulta
 - Notas especiales y cantidad antes de agregar un producto.
 - Carrito con las personalizaciones elegidas, cantidades y precio total.
 - Botones para aumentar, reducir o eliminar productos del carrito.
+- Base preparada para pedidos anónimos: no se requieren ni guardan datos personales.
 
 ## Tecnologías
 
@@ -53,3 +54,9 @@ src/
 ```
 
 Los extras ya no aparecen como productos independientes. Cada extra está asociado únicamente con los productos donde puede utilizarse.
+
+## Backend de pedidos anónimos
+
+La preparación de Supabase y el modelo de privacidad están documentados en
+[`docs/backend-anonimo.md`](docs/backend-anonimo.md). El esquema crea un número
+único de recogida en la base de datos y no contiene campos de información personal.
