@@ -99,6 +99,7 @@ export default function CartScreen() {
   const latestOrderAt = useProductsStore((state) => state.orders[0]?.createdAt ?? null);
   const clearCart = useProductsStore((state) => state.clearCart);
   const placeOrder = useProductsStore((state) => state.placeOrder);
+  const isSubmittingOrder = useProductsStore((state) => state.isSubmittingOrder);
   const [now, setNow] = useState(Date.now());
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -116,13 +117,15 @@ export default function CartScreen() {
     return () => clearInterval(timer);
   }, [latestOrderAt]);
 
-  const submitOrder = () => {
-    const result = placeOrder();
+  const submitOrder = async () => {
+    const result = await placeOrder();
 
     if (!result.success) {
       const message = result.reason === 'cooldown'
         ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
-        : 'Tu carrito está vacío.';
+        : result.reason === 'empty'
+          ? 'Tu carrito está vacío.'
+          : result.message ?? 'No se pudo generar el pedido. Revisa tu conexión e inténtalo de nuevo.';
       setDialog({
         title: 'No se pudo generar el pedido',
         message,
@@ -211,12 +214,14 @@ export default function CartScreen() {
                 <Text style={styles.total}>${total.toFixed(2)}</Text>
               </View>
               <Pressable
-                style={[styles.orderButton, remainingMs > 0 && styles.orderButtonDisabled]}
+                style={[styles.orderButton, (remainingMs > 0 || isSubmittingOrder) && styles.orderButtonDisabled]}
                 onPress={submitOrder}
-                disabled={remainingMs > 0}
+                disabled={remainingMs > 0 || isSubmittingOrder}
               >
                 <Text style={styles.orderButtonText}>
-                  {remainingMs > 0
+                  {isSubmittingOrder
+                    ? 'Generando pedido...'
+                    : remainingMs > 0
                     ? `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
                     : 'Generar pedido'}
                 </Text>

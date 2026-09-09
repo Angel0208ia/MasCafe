@@ -55,8 +55,10 @@ export type Order = {
   items: CartItem[];
   total: number;
   createdAt: number;
-  status: 'received';
+  status: OrderStatus;
 };
+
+export type OrderStatus = 'received' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
 
 export type CartActionResult = {
   success: boolean;
@@ -65,4 +67,4 @@ export type CartActionResult = {
 
 export type PlaceOrderResult =
   | { success: true; order: Order }
-  | { success: false; reason: 'empty' | 'cooldown'; remainingMs: number };
+  | { success: false; reason: 'empty' | 'cooldown' | 'network' | 'busy'; remainingMs: number; message?: string };

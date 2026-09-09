@@ -8,6 +8,17 @@ import { colors, font, getScreenPadding, layout, radius, spacing } from '../../c
 import { ORDER_COOLDOWN_MS, useProductsStore } from '../../store/productsStore';
 import type { Order } from '../../types/product';
 
+function statusLabel(status: Order['status']): string {
+  const labels: Record<Order['status'], string> = {
+    received: 'Recibido',
+    preparing: 'En preparación',
+    ready: 'Listo para recoger',
+    delivered: 'Entregado',
+    cancelled: 'Cancelado',
+  };
+  return labels[status];
+}
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
@@ -35,7 +46,7 @@ function OrderCard({ order }: { order: Order }) {
           <Text style={styles.orderDate}>{formatOrderDate(order.createdAt)}</Text>
         </View>
         <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>Recibido</Text>
+          <Text style={styles.statusText}>{statusLabel(order.status)}</Text>
         </View>
       </View>
 
@@ -73,12 +84,17 @@ export default function OrdersScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const orders = useProductsStore((state) => state.orders);
+  const loadTrackedOrders = useProductsStore((state) => state.loadTrackedOrders);
   const [now, setNow] = useState(Date.now());
   const latestOrder = orders[0];
   const remainingMs = latestOrder
     ? Math.max(0, latestOrder.createdAt + ORDER_COOLDOWN_MS - now)
     : 0;
   const horizontalPadding = getScreenPadding(width);
+
+  useEffect(() => {
+    void loadTrackedOrders();
+  }, [loadTrackedOrders]);
 
   useEffect(() => {
     if (!latestOrder || remainingMs === 0) return;
