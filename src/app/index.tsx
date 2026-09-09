@@ -70,7 +70,7 @@ export default function HomeScreen() {
           <View style={styles.heroContent}>
             <View style={styles.campusBadge}>
               <Ionicons name="location-outline" size={14} color={colors.primary} />
-              <Text style={styles.campusText}>Campus Central</Text>
+              <Text style={styles.campusText}>Campus Principal</Text>
             </View>
 
             <Text style={styles.heroTitle}>Pide antes de llegar</Text>
