@@ -1,82 +1,113 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import { useEffect, useRef } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 import { useProductsStore } from '../store/productsStore';
 
-type BottomNavProps = {
-  active: 'inicio' | 'menu' | 'carrito' | 'pedidos';
+type TabIcon = keyof typeof Ionicons.glyphMap;
+const icons: Record<string, { selected: TabIcon; idle: TabIcon }> = {
+  index: { selected: 'home', idle: 'home-outline' },
+  products: { selected: 'cafe', idle: 'cafe-outline' },
+  cart: { selected: 'cart', idle: 'cart-outline' },
+  orders: { selected: 'time', idle: 'time-outline' },
 };
 
-export default function BottomNav({ active }: BottomNavProps) {
-  const router = useRouter();
+function TabItem({
+  selected, label, icon, badge, reduceMotion, onPress, onLongPress,
+}: {
+  selected: boolean;
+  label: string;
+  icon: TabIcon;
+  badge: number;
+  reduceMotion: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
+  const highlight = useRef(new Animated.Value(selected ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      highlight.setValue(selected ? 1 : 0);
+      return;
+    }
+    const animation = Animated.timing(highlight, {
+      toValue: selected ? 1 : 0,
+      duration: 160,
+      useNativeDriver: Platform.OS !== 'web',
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [highlight, reduceMotion, selected]);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.item, pressed && styles.pressed]}
+      accessibilityRole="tab"
+      accessibilityState={{ selected }}
+      aria-selected={selected}
+      accessibilityLabel={badge > 0 ? `${label}, ${badge} artículos` : label}
+      onPress={onPress}
+      onLongPress={onLongPress}
+    >
+      <Animated.View
+        style={[StyleSheet.absoluteFill, styles.activeItem, { opacity: highlight, pointerEvents: 'none' }]}
+      />
+      <View>
+        <Ionicons name={icon} size={23} color={selected ? colors.primary : colors.muted} />
+        {badge > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={[styles.label, selected && styles.activeLabel]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export default function BottomNav({
+  state, descriptors, navigation, insets, reduceMotion,
+}: BottomTabBarProps & { reduceMotion: boolean }) {
   const cartCount = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
   );
 
   return (
-    <View style={styles.bar}>
-      <View style={styles.container}>
-      <Link href="/" asChild>
-        <Pressable
-          style={StyleSheet.flatten([
-            styles.item,
-            active === 'inicio' ? styles.activeItem : undefined,
-          ])}
-          accessibilityRole="button"
-          accessibilityLabel="Ir al inicio"
-        >
-          <Ionicons
-            name={active === 'inicio' ? 'home' : 'home-outline'}
-            size={21}
-            color={active === 'inicio' ? colors.primary : colors.muted}
-          />
-          <Text style={[styles.label, active === 'inicio' && styles.activeLabel]}>Inicio</Text>
-        </Pressable>
-      </Link>
+    <View
+      testID="bottom-navigation"
+      style={[styles.bar, {
+        paddingBottom: Math.max(insets.bottom, spacing.md),
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }]}
+    >
+      <View style={styles.container} accessibilityRole="tablist">
+        {state.routes.map((route, index) => {
+          const selected = state.index === index;
+          const icon = icons[route.name] ?? icons.index;
+          const label = descriptors[route.key].options.title ?? route.name;
 
-      <Pressable
-        style={[styles.item, active === 'menu' && styles.activeItem]}
-        onPress={() => router.replace('/products')}
-      >
-        <Ionicons
-          name={active === 'menu' ? 'cafe' : 'cafe-outline'}
-          size={23}
-          color={active === 'menu' ? colors.primary : colors.muted}
-        />
-        <Text style={[styles.label, active === 'menu' && styles.activeLabel]}>Menú</Text>
-      </Pressable>
-
-      <Pressable
-        style={[styles.item, active === 'carrito' && styles.activeItem]}
-        onPress={() => router.replace('/cart')}
-      >
-        <View>
-          <Ionicons
-            name={active === 'carrito' ? 'cart' : 'cart-outline'}
-            size={23}
-            color={active === 'carrito' ? colors.primary : colors.muted}
-          />
-          {cartCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
-            </View>
-          )}
-        </View>
-        <Text style={[styles.label, active === 'carrito' && styles.activeLabel]}>Carrito</Text>
-      </Pressable>
-
-      <Pressable
-        style={[styles.item, active === 'pedidos' && styles.activeItem]}
-        onPress={() => router.replace('/orders')}
-      >
-        <Ionicons
-          name={active === 'pedidos' ? 'time' : 'time-outline'}
-          size={21}
-          color={active === 'pedidos' ? colors.primary : colors.muted}
-        />
-        <Text style={[styles.label, active === 'pedidos' && styles.activeLabel]}>Pedidos</Text>
-      </Pressable>
+          return (
+            <TabItem
+              key={route.key}
+              selected={selected}
+              label={label}
+              icon={selected ? icon.selected : icon.idle}
+              badge={route.name === 'cart' ? cartCount : 0}
+              reduceMotion={reduceMotion}
+              onPress={() => {
+                const event = navigation.emit({
+                  type: 'tabPress', target: route.key, canPreventDefault: true,
+                });
+                if (!selected && !event.defaultPrevented) {
+                  navigation.navigate(route.name, route.params);
+                }
+              }}
+              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+            />
+          );
+        })}
       </View>
     </View>
   );
@@ -96,43 +127,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
   },
   item: {
     flex: 1,
     maxWidth: 110,
-    height: 52,
+    minHeight: 52,
+    paddingVertical: spacing.xs,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 2,
     borderRadius: radius.md,
   },
-  activeItem: {
-    backgroundColor: colors.thumb,
-  },
-  label: {
-    fontSize: font.tiny,
-    fontWeight: '600',
-    color: colors.muted,
-  },
-  activeLabel: {
-    color: colors.primary,
-  },
+  activeItem: { borderRadius: radius.md, backgroundColor: colors.thumb },
+  pressed: { opacity: 0.7 },
+  label: { fontSize: font.tiny, fontWeight: '600', color: colors.muted },
+  activeLabel: { color: colors.primary },
   badge: {
-    position: 'absolute',
-    top: -7,
-    right: -12,
-    minWidth: 19,
-    height: 19,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.pill,
-    backgroundColor: colors.danger,
+    position: 'absolute', top: -7, right: -12,
+    minWidth: 19, height: 19, paddingHorizontal: 4,
+    alignItems: 'center', justifyContent: 'center',
+    borderRadius: radius.pill, backgroundColor: colors.danger,
   },
-  badgeText: {
-    color: colors.onPrimary,
-    fontSize: 10,
-    fontWeight: '800',
-  },
+  badgeText: { color: colors.onPrimary, fontSize: 10, fontWeight: '800' },
 });

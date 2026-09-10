@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState, type ReactNode } from 'react';
 import {
   FlatList,
   Image,
@@ -11,19 +11,19 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
-import BottomNav from '../../components/BottomNav';
-import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
+import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
   MAX_ITEMS_PER_ORDER,
   ORDER_COOLDOWN_MS,
   useProductsStore,
-} from '../../store/productsStore';
-import type { CartItem } from '../../types/product';
+} from '@/store/productsStore';
+import type { CartItem } from '@/types/product';
 
 type DialogState = {
   title: string;
-  message: string;
+  message: ReactNode;
+  messageStyle?: { fontSize: number; lineHeight: number };
   icon?: keyof typeof Ionicons.glyphMap;
   actions?: AppDialogAction[];
 };
@@ -109,13 +109,17 @@ export default function CartScreen() {
     : 0;
   const horizontalPadding = getScreenPadding(width);
 
-  useEffect(() => {
-    if (!latestOrderAt) return;
-
+  useFocusEffect(useCallback(() => {
     setNow(Date.now());
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    if (!latestOrderAt || Date.now() >= latestOrderAt + ORDER_COOLDOWN_MS) return;
+
+    const timer = setInterval(() => {
+      const currentTime = Date.now();
+      setNow(currentTime);
+      if (currentTime >= latestOrderAt + ORDER_COOLDOWN_MS) clearInterval(timer);
+    }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrderAt]);
+  }, [latestOrderAt]));
 
   const submitOrder = async () => {
     const result = await placeOrder();
@@ -136,10 +140,15 @@ export default function CartScreen() {
 
     setDialog({
       title: 'Pedido generado',
-      message: `Tu pedido ${result.order.number} fue recibido.`,
+      message: (
+        <>
+          Tu pedido <Text style={styles.orderNumber}>{result.order.number}</Text> fue generado
+        </>
+      ),
+      messageStyle: { fontSize: 16, lineHeight: 24 },
       icon: 'checkmark-circle-outline',
       actions: [
-        { label: 'Ver pedido', onPress: () => router.replace('/orders') },
+        { label: 'Ver pedido', onPress: () => router.navigate('/orders') },
       ],
     });
   };
@@ -195,7 +204,7 @@ export default function CartScreen() {
             <Ionicons name="cart-outline" size={58} color={colors.chipBorder} />
             <Text style={styles.emptyTitle}>Tu carrito está vacío</Text>
             <Text style={styles.emptyText}>Elige algo del menú y personalízalo a tu gusto.</Text>
-            <Pressable style={styles.menuButton} onPress={() => router.replace('/products')}>
+            <Pressable style={styles.menuButton} onPress={() => router.navigate('/products')}>
               <Text style={styles.menuButtonText}>Ver el menú</Text>
             </Pressable>
           </View>
@@ -230,11 +239,11 @@ export default function CartScreen() {
           ) : null
         }
       />
-      <BottomNav active="carrito" />
       <AppDialog
         visible={dialog !== null}
         title={dialog?.title ?? ''}
         message={dialog?.message ?? ''}
+        messageStyle={dialog?.messageStyle}
         icon={dialog?.icon}
         actions={dialog?.actions}
         onClose={() => setDialog(null)}
@@ -244,6 +253,7 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
+  orderNumber: { fontWeight: '800', color: colors.primary },
   screen: { flex: 1, backgroundColor: colors.background },
   list: { width: '100%' },
   content: {

@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
 import { MAX_ITEMS_PER_ORDER, useProductsStore } from '../../store/productsStore';
@@ -88,12 +89,12 @@ export default function ProductDetailScreen() {
 
   if (!product) {
     return (
-      <View style={styles.notFound}>
+      <SafeAreaView style={styles.notFound} edges={['bottom', 'left', 'right']}>
         <Text style={styles.notFoundTitle}>Producto no encontrado</Text>
-        <Pressable style={styles.primaryButton} onPress={() => router.replace('/products')}>
+        <Pressable style={styles.primaryButton} onPress={() => router.dismissTo('/products')}>
           <Text style={styles.primaryButtonText}>Volver al menú</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -197,13 +198,13 @@ export default function ProductDetailScreen() {
       icon: 'checkmark-circle-outline',
       actions: [
         { label: 'Seguir comprando', variant: 'secondary', onPress: () => router.back() },
-        { label: 'Ver carrito', onPress: () => router.replace('/cart') },
+        { label: 'Ver carrito', onPress: () => router.dismissTo('/cart') },
       ],
     });
   };
 
   return (
-    <>
+    <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
           <View style={[styles.productLayout, isDesktop && styles.productLayoutDesktop]}>
@@ -331,7 +332,7 @@ export default function ProductDetailScreen() {
         actions={dialog?.actions}
         onClose={() => setDialog(null)}
       />
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -10,9 +10,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomNav from '../components/BottomNav';
-import { colors, font, getScreenPadding, layout, radius, spacing } from '../constants/theme';
-import { ALL_CATEGORIES, useProductsStore } from '../store/productsStore';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
+import { ALL_CATEGORIES, useProductsStore } from '@/store/productsStore';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -24,7 +23,7 @@ export default function HomeScreen() {
 
   const openMenu = () => {
     setCategory(ALL_CATEGORIES);
-    router.push('/products');
+    router.navigate('/products');
   };
 
   const horizontalPadding = getScreenPadding(width);
@@ -48,12 +47,12 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.brand}>Más Café</Text>
-            <Text style={styles.greeting}>¿Qué se te antoja hoy?</Text>
+            <Text style={styles.greeting}>¡Más sabor para tu día!</Text>
           </View>
 
           <Pressable
             style={({ pressed }) => [styles.cartShortcut, pressed && styles.pressed]}
-            onPress={() => router.push('/cart')}
+            onPress={() => router.navigate('/cart')}
             accessibilityRole="button"
             accessibilityLabel="Abrir carrito"
           >
@@ -73,9 +72,9 @@ export default function HomeScreen() {
               <Text style={styles.campusText}>Campus Principal</Text>
             </View>
 
-            <Text style={styles.heroTitle}>Pide antes de llegar</Text>
+            <Text style={styles.heroTitle}>¿Qué se te antoja hoy?</Text>
             <Text style={styles.heroText}>
-              Personaliza tu pedido, evita la fila y recógelo en la cafetería.
+            Evita la fila y recógelo en la cafetería.
             </Text>
 
             <Pressable
@@ -90,7 +89,7 @@ export default function HomeScreen() {
 
           <View style={[styles.heroIcon, isDesktop && styles.heroIconDesktop, isCompact && styles.heroIconCompact]}>
             <Image
-              source={require('../../assets/images/logo-mas-cafe.png')}
+              source={require('@/assets/images/logo-mas-cafe.png')}
               style={[styles.heroLogo, isDesktop && styles.heroLogoDesktop, isCompact && styles.heroLogoCompact]}
               resizeMode="contain"
               accessibilityLabel="Logo de Más Café"
@@ -112,7 +111,7 @@ export default function HomeScreen() {
             accessibilityLabel="Ver promociones de Más Café"
           >
             <Image
-              source={require('../../assets/images/promociones-semanales.jpeg')}
+              source={require('@/assets/images/promociones-semanales.jpeg')}
               style={{ width: posterWidth, height: posterHeight }}
               resizeMode="contain"
             />
@@ -143,7 +142,6 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <BottomNav active="inicio" />
     </SafeAreaView>
   );
 }
