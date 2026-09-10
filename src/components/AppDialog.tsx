@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import type { ReactNode } from 'react';
+import { type StyleProp, type TextStyle, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 
 export type AppDialogAction = {
@@ -11,7 +12,8 @@ export type AppDialogAction = {
 type AppDialogProps = {
   visible: boolean;
   title: string;
-  message: string;
+  message: ReactNode;
+  messageStyle?: StyleProp<TextStyle>;
   icon?: keyof typeof Ionicons.glyphMap;
   actions?: AppDialogAction[];
   onClose: () => void;
@@ -21,6 +23,7 @@ export default function AppDialog({
   visible,
   title,
   message,
+  messageStyle,
   icon = 'cafe-outline',
   actions = [{ label: 'Entendido' }],
   onClose,
@@ -45,7 +48,7 @@ export default function AppDialog({
           </View>
 
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={[styles.message, messageStyle]}>{message}</Text>
 
           <View style={[styles.actions, stackActions && styles.actionsStacked]}>
             {actions.map((action) => {

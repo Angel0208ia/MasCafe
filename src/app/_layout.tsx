@@ -1,61 +1,24 @@
-import { Stack } from "expo-router";
+import { Stack } from 'expo-router';
+import { colors } from '../constants/theme';
+
+export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
-    return (
-        <Stack
-            screenOptions={{
-                headerStyle: {
-                    backgroundColor: "#FBF8F3"
-                },
-
-                headerTintColor: "#5A2A12",
-
-                headerTitleStyle: {
-                    fontWeight: "700"
-                },
-
-                headerShadowVisible: false,
-
-                contentStyle: {
-                    backgroundColor: "#FBF8F3"
-                }
-            }}
-        >
-            <Stack.Screen
-                name="index"
-                options={{
-                    headerShown: false
-                }}
-            />
-
-            <Stack.Screen
-                name="products/index"
-                options={{
-                    headerShown: false
-                }}
-            />
-
-            <Stack.Screen
-                name="products/[id]"
-                options={{
-                    title: "Producto",
-                    headerBackTitle: "Menú"
-                }}
-            />
-
-            <Stack.Screen
-                name="cart/index"
-                options={{
-                    headerShown: false
-                }}
-            />
-
-            <Stack.Screen
-                name="orders/index"
-                options={{
-                    headerShown: false
-                }}
-            />
-        </Stack>
-    );
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.background },
+        headerTintColor: colors.primary,
+        headerTitleStyle: { fontWeight: '700' },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.background },
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="products/[id]"
+        options={{ title: 'Producto', headerBackTitle: 'Menú' }}
+      />
+    </Stack>
+  );
 }

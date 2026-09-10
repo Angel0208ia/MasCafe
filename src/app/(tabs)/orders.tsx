@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomNav from '../../components/BottomNav';
-import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
-import { ORDER_COOLDOWN_MS, useProductsStore } from '../../store/productsStore';
-import type { Order } from '../../types/product';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
+import { ORDER_COOLDOWN_MS, useProductsStore } from '@/store/productsStore';
+import type { Order } from '@/types/product';
 
 function statusLabel(status: Order['status']): string {
   const labels: Record<Order['status'], string> = {
@@ -92,16 +91,22 @@ export default function OrdersScreen() {
     : 0;
   const horizontalPadding = getScreenPadding(width);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     void loadTrackedOrders();
-  }, [loadTrackedOrders]);
+  }, [loadTrackedOrders]));
 
-  useEffect(() => {
-    if (!latestOrder || remainingMs === 0) return;
+  const latestOrderAt = latestOrder?.createdAt;
+  useFocusEffect(useCallback(() => {
+    setNow(Date.now());
+    if (!latestOrderAt || Date.now() >= latestOrderAt + ORDER_COOLDOWN_MS) return;
 
-    const timer = setInterval(() => setNow(Date.now()), 1000);
+    const timer = setInterval(() => {
+      const currentTime = Date.now();
+      setNow(currentTime);
+      if (currentTime >= latestOrderAt + ORDER_COOLDOWN_MS) clearInterval(timer);
+    }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrder?.id, remainingMs === 0]);
+  }, [latestOrderAt]));
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -147,14 +152,13 @@ export default function OrdersScreen() {
             <Ionicons name="receipt-outline" size={58} color={colors.chipBorder} />
             <Text style={styles.emptyTitle}>Aún no tienes pedidos</Text>
             <Text style={styles.emptyText}>Cuando generes uno aparecerá en esta pantalla.</Text>
-            <Pressable style={styles.menuButton} onPress={() => router.replace('/products')}>
+            <Pressable style={styles.menuButton} onPress={() => router.navigate('/products')}>
               <Text style={styles.menuButtonText}>Ver el menú</Text>
             </Pressable>
           </View>
         }
       />
 
-      <BottomNav active="pedidos" />
     </SafeAreaView>
   );
 }

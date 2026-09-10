@@ -1,12 +1,11 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useMemo } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useMemo } from 'react';
 import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BottomNav from '../../components/BottomNav';
-import CategoryFilter from '../../components/CategoryFilter';
-import ProductCard from '../../components/ProductCard';
-import { colors, font, getScreenPadding, layout, spacing } from '../../constants/theme';
-import { filterByCategory, useProductsStore } from '../../store/productsStore';
+import CategoryFilter from '@/components/CategoryFilter';
+import ProductCard from '@/components/ProductCard';
+import { colors, font, getScreenPadding, layout, spacing } from '@/constants/theme';
+import { filterByCategory, useProductsStore } from '@/store/productsStore';
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -36,9 +35,9 @@ export default function ProductsScreen() {
   const columnGap = spacing.lg;
   const cardWidth = (availableWidth - columnGap * (columns - 1)) / columns;
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     void loadMenu();
-  }, [loadMenu]);
+  }, [loadMenu]));
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -90,7 +89,6 @@ export default function ProductsScreen() {
           </View>
         }
       />
-      <BottomNav active="menu" />
     </SafeAreaView>
   );
 }
