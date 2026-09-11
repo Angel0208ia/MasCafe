@@ -1,4 +1,5 @@
 import type { CustomizationGroup, Product } from '../types/product';
+import { getProductImage } from '../constants/productImages';
 import { supabase } from './supabase';
 
 type ProductRow = {
@@ -26,7 +27,7 @@ export async function fetchMenu(): Promise<Product[]> {
     id: product.id,
     name: product.name,
     description: product.description,
-    image: product.image,
+    image: getProductImage(product.id, product.image),
     category: product.category,
     price: Number(product.base_price),
     available: product.available,

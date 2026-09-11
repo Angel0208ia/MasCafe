@@ -12,6 +12,7 @@ import { fetchMenu } from '../lib/menuApi';
 import { createAnonymousOrder, fetchTrackedOrders } from '../lib/ordersApi';
 import { calculateUnitPrice, createDefaultSelections } from '../lib/productCustomizations';
 import { getPromotionById, isPromotionActive } from '../constants/promotions';
+import { getProductImage } from '../constants/productImages';
 
 export type { CartItem, Product } from '../types/product';
 
@@ -24,7 +25,10 @@ export type CategoryOption = {
   value: string;
 };
 
-const initialProducts = productsData as Product[];
+const initialProducts = (productsData as Product[]).map((product) => ({
+  ...product,
+  image: getProductImage(product.id, product.image),
+}));
 
 const CATEGORY_LABELS: Record<string, string> = {
   Licuados: 'Licuados',

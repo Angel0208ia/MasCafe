@@ -2,7 +2,8 @@
 .brandPanel { position: relative; display: flex; min-height: 100vh; flex-direction: column; overflow: hidden; padding: 48px clamp(32px, 5vw, 76px); color: white; background: var(--coffee-900); }
 .brandPanel::before { position: absolute; right: -170px; bottom: -160px; width: 480px; height: 480px; content: ""; border: 1px solid rgba(255,255,255,.13); border-radius: 50%; box-shadow: 0 0 0 60px rgba(255,255,255,.025), 0 0 0 120px rgba(255,255,255,.02); }
 .brandPanel::after { position: absolute; top: 0; left: 0; width: 7px; height: 100%; content: ""; background: #d58b55; }
-.brandMark { display: grid; width: 54px; height: 54px; place-items: center; flex: 0 0 auto; border-radius: 17px; color: var(--coffee-900); background: var(--cream-200); }
+.brandMark { display: grid; width: 54px; height: 54px; place-items: center; flex: 0 0 auto; box-sizing: border-box; border: 1px solid rgba(255,255,255,.16); border-radius: 17px; background: var(--coffee-800); }
+.brandLogo { width: 48px; height: 48px; object-fit: contain; border-radius: 14px; }
 .brandCopy { display: flex; flex-direction: column; gap: 3px; margin-top: -51px; margin-left: 70px; }
 .brandCopy span { font-size: .78rem; font-weight: 850; letter-spacing: .16em; color: #e8b68f; }
 .brandCopy strong { font-size: 1.08rem; }
@@ -38,6 +39,6 @@
   .loginPanel { align-content: center; padding: 24px; }
   .mobileBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; font-size: 1.18rem; color: var(--coffee-900); }
   .mobileBrand .brandMark { width: 46px; height: 46px; border-radius: 15px; }
+  .mobileBrand .brandLogo { width: 40px; height: 40px; border-radius: 12px; }
   .card { padding: 30px 24px; border-radius: 22px; }
 }
-

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { memo } from 'react';
 import {
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 import type { Product } from '../types/product';
+import ProductImage from './ProductImage';
 
 type ProductCardProps = {
   product: Product;
@@ -31,7 +31,7 @@ function ProductCard({ product, onPress, style }: ProductCardProps) {
       accessibilityRole="button"
       accessibilityLabel={`Personalizar ${product.name}`}
     >
-      <Image source={{ uri: product.image }} style={styles.image} />
+      <ProductImage uri={product.image} name={product.name} style={styles.image} />
 
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>

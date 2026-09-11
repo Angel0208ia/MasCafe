@@ -74,6 +74,9 @@ create policy "El personal consulta eventos"
   to authenticated
   using (public.is_staff());
 
+-- No dependemos de los privilegios predeterminados del esquema public.
+-- Las escrituras de personal pasan exclusivamente por funciones controladas.
+revoke all on public.staff_members, public.order_status_events from anon, authenticated;
 grant select on public.staff_members to authenticated;
 grant select on public.orders, public.order_items, public.order_status_events to authenticated;
 
@@ -208,4 +211,3 @@ begin
     alter publication supabase_realtime add table public.orders;
   end if;
 end $$;
-

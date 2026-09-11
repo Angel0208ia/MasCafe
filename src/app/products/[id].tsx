@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -11,9 +10,10 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
+import KeyboardResponsiveScrollView from '../../components/KeyboardResponsiveScrollView';
+import ProductImage from '../../components/ProductImage';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
 import { MAX_ITEMS_PER_ORDER, useProductsStore } from '../../store/productsStore';
 import type { CustomizationGroup, Product, SelectedCustomization } from '../../types/product';
@@ -245,10 +245,9 @@ export default function ProductDetailScreen() {
           headerBackTitle: isEditing ? 'Carrito' : 'Menú',
         }}
       />
-      <KeyboardAwareScrollView
+      <KeyboardResponsiveScrollView
         style={styles.screen}
         contentContainerStyle={styles.scrollContent}
-        enabled={Platform.OS !== 'web'}
         bottomOffset={spacing.xl}
         extraKeyboardSpace={spacing.lg}
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -257,7 +256,7 @@ export default function ProductDetailScreen() {
         <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
           <View style={[styles.productLayout, isDesktop && styles.productLayoutDesktop]}>
             <View style={[styles.summaryColumn, isDesktop && styles.summaryColumnDesktop]}>
-              <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+              <ProductImage uri={product.image} name={product.name} style={styles.image} />
 
               <View style={styles.header}>
                 <Text style={styles.category}>{product.category}</Text>
@@ -376,7 +375,7 @@ export default function ProductDetailScreen() {
             </View>
           </View>
         </View>
-      </KeyboardAwareScrollView>
+      </KeyboardResponsiveScrollView>
 
       <AppDialog
         visible={dialog !== null}

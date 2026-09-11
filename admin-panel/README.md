@@ -15,7 +15,7 @@ Más Café. Utiliza Next.js, Supabase Auth, políticas RLS y Supabase Realtime.
 ## Comprobaciones
 
 - `npm run lint`
+- `npm run typecheck`
 - `npm run build`
 
 La clave `service_role` no se utiliza ni debe agregarse a este proyecto.
-

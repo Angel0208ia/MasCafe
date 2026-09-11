@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
+import ProductImage from '@/components/ProductImage';
 import { getCartPricing } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
@@ -55,7 +55,7 @@ function CartProduct({
 
   return (
     <View style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <ProductImage uri={item.image} name={item.name} style={styles.image} />
       <View style={styles.info}>
         <View style={styles.cardHeader}>
           <Text style={styles.name}>{item.name}</Text>

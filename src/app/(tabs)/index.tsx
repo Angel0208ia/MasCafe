@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog from '@/components/AppDialog';
+import ProductImage from '@/components/ProductImage';
 import { PROMOTIONS, isPromotionActive } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ALL_CATEGORIES, useProductsStore } from '@/store/productsStore';
@@ -110,7 +111,7 @@ export default function HomeScreen() {
             <Image
               source={require('@/assets/images/logo-mas-cafe.png')}
               style={[styles.heroLogo, isDesktop && styles.heroLogoDesktop, isCompact && styles.heroLogoCompact]}
-              resizeMode="contain"
+              contentFit="contain"
               accessibilityLabel="Logo de Más Café"
             />
           </View>
@@ -167,7 +168,11 @@ export default function HomeScreen() {
                         </View>
                       )}
                       {product ? (
-                        <Image source={{ uri: product.image }} style={styles.promotionImage} />
+                        <ProductImage
+                          uri={product.image}
+                          name={product.name}
+                          style={styles.promotionImage}
+                        />
                       ) : (
                         <View style={styles.promotionImagePlaceholder} />
                       )}

@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeDollarSign, Bell, Check, ChevronRight, CircleDot, ClipboardList, Coffee, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, Settings, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
+import { BadgeDollarSign, Bell, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, Settings, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
 import { signOut } from "@/app/actions";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder, OrderStatus, StaffRole } from "@/lib/types";
@@ -202,7 +203,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
   return (
     <div className={styles.shell}>
       <aside className={styles.sidebar}>
-        <div className={styles.logoRow}><div className={styles.logo}><Coffee size={25} /></div><div><strong>Más Café</strong><span>Panel de negocio</span></div></div>
+        <div className={styles.logoRow}><div className={styles.logo}><Image className={styles.logoImage} src="/logo-mas-cafe.png" alt="Logo de Más Café" width={40} height={40} priority /></div><div><strong>Más Café</strong><span>Panel de negocio</span></div></div>
         <nav className={styles.navigation} aria-label="Navegación principal">
           <button className={styles.navActive}><LayoutDashboard size={19} />Operación</button>
           <button disabled><ClipboardList size={19} />Pedidos</button>
