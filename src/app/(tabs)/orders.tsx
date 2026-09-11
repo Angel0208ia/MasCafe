@@ -3,20 +3,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getOrderStatusLabel } from '@/constants/orderStatus';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ORDER_COOLDOWN_MS, useProductsStore } from '@/store/productsStore';
 import type { Order } from '@/types/product';
-
-function statusLabel(status: Order['status']): string {
-  const labels: Record<Order['status'], string> = {
-    received: 'Recibido',
-    preparing: 'En preparación',
-    ready: 'Listo para recoger',
-    delivered: 'Entregado',
-    cancelled: 'Cancelado',
-  };
-  return labels[status];
-}
 
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
@@ -34,49 +24,66 @@ function formatOrderDate(timestamp: number): string {
   });
 }
 
-function OrderCard({ order }: { order: Order }) {
+function getStatusTone(status: Order['status']): { background: string; foreground: string } {
+  const tones: Record<Order['status'], { background: string; foreground: string }> = {
+    received: { background: colors.thumb, foreground: colors.primary },
+    preparing: { background: '#FBE9DE', foreground: '#A94F23' },
+    ready: { background: '#E8F3E8', foreground: colors.success },
+    delivered: { background: '#F0ECE8', foreground: '#6F625A' },
+    cancelled: { background: '#FBE9E7', foreground: colors.danger },
+  };
+  return tones[status];
+}
+
+function OrderCard({ order, onPress }: { order: Order; onPress: (id: string) => void }) {
   const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
+  const productSummary = order.items.map((item) => `${item.quantity} × ${item.name}`).join(' · ');
+  const tone = getStatusTone(order.status);
 
   return (
-    <View style={styles.orderCard}>
+    <Pressable
+      style={({ pressed }) => [styles.orderCard, pressed && styles.orderCardPressed]}
+      onPress={() => onPress(order.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir pedido ${order.number}, ${getOrderStatusLabel(order.status)}`}
+    >
       <View style={styles.orderHeader}>
-        <View>
+        <View style={styles.orderIdentity}>
           <Text style={styles.orderNumber}>{order.number}</Text>
           <Text style={styles.orderDate}>{formatOrderDate(order.createdAt)}</Text>
         </View>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{statusLabel(order.status)}</Text>
+        <View style={[styles.statusBadge, { backgroundColor: tone.background }]}>
+          <View style={[styles.statusDot, { backgroundColor: tone.foreground }]} />
+          <Text style={[styles.statusText, { color: tone.foreground }]}>
+            {getOrderStatusLabel(order.status)}
+          </Text>
         </View>
       </View>
 
       <View style={styles.divider} />
-
-      {order.items.map((item) => (
-        <View key={item.cartItemId} style={styles.productRow}>
-          <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.quantity} × {item.name}</Text>
-            {item.selections.length > 0 && (
-              <Text style={styles.productDetails} numberOfLines={2}>
-                {item.selections
-                  .flatMap((selection) => selection.options.map((option) => option.name))
-                  .join(', ')}
-              </Text>
-            )}
-          </View>
-          <Text style={styles.productPrice}>
-            ${(item.unitPrice * item.quantity).toFixed(2)}
-          </Text>
-        </View>
-      ))}
+      <Text style={styles.productSummary} numberOfLines={2}>{productSummary}</Text>
 
       <View style={styles.orderFooter}>
-        <Text style={styles.itemCount}>
-          {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
-        </Text>
-        <Text style={styles.total}>Total: ${order.total.toFixed(2)}</Text>
+        <View>
+          <Text style={styles.itemCount}>
+            {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+          </Text>
+          <Text style={styles.total}>${order.total.toFixed(2)}</Text>
+        </View>
+        <View style={styles.openOrder}>
+          <Text style={styles.openOrderText}>Ver seguimiento</Text>
+          <Ionicons name="chevron-forward" size={17} color={colors.primary} />
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
+}
+
+function openOrderDetail(router: ReturnType<typeof useRouter>, orderId: string) {
+  router.push({
+    pathname: '/orders/[id]',
+    params: { id: orderId },
+  });
 }
 
 export default function OrdersScreen() {
@@ -146,7 +153,9 @@ export default function OrdersScreen() {
             {orders.length > 0 && <Text style={styles.sectionTitle}>Historial</Text>}
           </View>
         }
-        renderItem={({ item }) => <OrderCard order={item} />}
+        renderItem={({ item }) => (
+          <OrderCard order={item} onPress={(id) => openOrderDetail(router, id)} />
+        )}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="receipt-outline" size={58} color={colors.chipBorder} />
@@ -209,32 +218,34 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
   },
+  orderCardPressed: { opacity: 0.78 },
   orderHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  orderIdentity: { flex: 1, marginRight: spacing.sm },
   orderNumber: { fontSize: font.body, fontWeight: '800', color: colors.text },
   orderDate: { marginTop: 3, fontSize: font.tiny, color: colors.muted },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
     paddingVertical: 6,
     borderRadius: radius.pill,
     backgroundColor: '#E8F3E8',
   },
-  statusText: { fontSize: font.tiny, fontWeight: '700', color: colors.success },
+  statusDot: { width: 7, height: 7, borderRadius: radius.pill },
+  statusText: { fontSize: font.tiny, fontWeight: '700' },
   divider: { height: 1, marginVertical: spacing.md, backgroundColor: colors.border },
-  productRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
-  productInfo: { flex: 1, marginRight: spacing.md },
-  productName: { fontSize: font.small, fontWeight: '700', color: colors.text },
-  productDetails: { marginTop: 2, fontSize: font.tiny, lineHeight: 15, color: colors.muted },
-  productPrice: { fontSize: font.small, fontWeight: '700', color: colors.primary },
+  productSummary: { minHeight: 36, fontSize: font.small, lineHeight: 18, color: colors.muted },
   orderFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: spacing.md,
   },
   itemCount: { fontSize: font.small, color: colors.muted },
-  total: { fontSize: font.body, fontWeight: '800', color: colors.primary },
+  total: { marginTop: 2, fontSize: font.body, fontWeight: '800', color: colors.primary },
+  openOrder: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  openOrderText: { fontSize: font.small, fontWeight: '800', color: colors.primary },
   empty: { alignItems: 'center', marginTop: 90, paddingHorizontal: spacing.xl },
   emptyTitle: { marginTop: spacing.lg, fontSize: font.heading, fontWeight: '700', color: colors.text },
   emptyText: { marginTop: spacing.sm, textAlign: 'center', fontSize: font.small, color: colors.muted },

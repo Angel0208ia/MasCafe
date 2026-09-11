@@ -23,6 +23,17 @@ Un código corto no se usa para consultar la API porque otra persona podría adi
 4. No compartan ni agreguen a la app la clave `service_role` ni la contraseña
    de PostgreSQL.
 
-La siguiente etapa del proyecto será cargar el menú actual de
-`src/data/products.json` a la tabla `products` y conectar el botón
-**Generar pedido** a la función `create_anonymous_order`.
+## Activar promociones en una base existente
+
+El archivo `supabase/schema.sql` ya incluye las promociones para instalaciones
+nuevas. Si la base de datos ya estaba funcionando, ejecuta una vez
+`supabase/apply-promotions.sql` en **Supabase Dashboard > SQL Editor**.
+
+El servidor valida la promoción con la zona horaria `America/Cancun` y calcula
+el descuento usando los productos reales del pedido:
+
+- Martes: dos cappuccinos; el segundo queda en $45.
+- Jueves: brownie + matcha por $90.
+
+Los extras de personalización conservan su precio y el teléfono nunca decide el
+total final del pedido.

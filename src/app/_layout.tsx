@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { colors } from '../constants/theme';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
-  return (
+  const navigation = (
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: colors.background },
@@ -19,6 +21,14 @@ export default function RootLayout() {
         name="products/[id]"
         options={{ title: 'Producto', headerBackTitle: 'Menú' }}
       />
+      <Stack.Screen
+        name="orders/[id]"
+        options={{ title: 'Seguimiento', headerBackTitle: 'Pedidos' }}
+      />
     </Stack>
   );
+
+  if (Platform.OS === 'web') return navigation;
+
+  return <KeyboardProvider>{navigation}</KeyboardProvider>;
 }

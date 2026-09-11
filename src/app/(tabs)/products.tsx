@@ -1,11 +1,31 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+  type ListRenderItem,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CategoryFilter from '@/components/CategoryFilter';
 import ProductCard from '@/components/ProductCard';
-import { colors, font, getScreenPadding, layout, spacing } from '@/constants/theme';
+import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { filterByCategory, useProductsStore } from '@/store/productsStore';
+import type { Product } from '@/types/product';
+
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es-MX')
+    .trim();
+}
 
 export default function ProductsScreen() {
   const router = useRouter();
@@ -15,15 +35,22 @@ export default function ProductsScreen() {
   const setCategory = useProductsStore((state) => state.setCategory);
   const loadMenu = useProductsStore((state) => state.loadMenu);
   const getCategories = useProductsStore((state) => state.getCategories);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // getCategories crea el arreglo a partir del menú remoto. Memorizarlo aquí
   // evita que Zustand reciba una referencia distinta en cada render.
   const categories = useMemo(() => getCategories(), [getCategories, products]);
 
-  const visibleProducts = useMemo(
-    () => filterByCategory(products, selectedCategory),
-    [products, selectedCategory]
-  );
+  const visibleProducts = useMemo(() => {
+    const productsInCategory = filterByCategory(products, selectedCategory);
+    const normalizedQuery = normalizeSearchText(searchQuery);
+
+    if (!normalizedQuery) return productsInCategory;
+
+    return productsInCategory.filter((product) =>
+      normalizeSearchText(`${product.name} ${product.description}`).includes(normalizedQuery)
+    );
+  }, [products, searchQuery, selectedCategory]);
 
   const currentCategory =
     categories.find((category) => category.value === selectedCategory)?.label ?? 'Todos';
@@ -34,6 +61,22 @@ export default function ProductsScreen() {
   const columns = width >= 1100 ? 3 : width >= layout.tabletBreakpoint ? 2 : 1;
   const columnGap = spacing.lg;
   const cardWidth = (availableWidth - columnGap * (columns - 1)) / columns;
+  const cardStyle = useMemo(
+    () => ({ width: cardWidth, maxWidth: cardWidth }),
+    [cardWidth]
+  );
+
+  const openProduct = useCallback(
+    (id: string) => router.push(`/products/${id}`),
+    [router]
+  );
+
+  const renderProduct = useCallback<ListRenderItem<Product>>(
+    ({ item }) => (
+      <ProductCard product={item} style={cardStyle} onPress={openProduct} />
+    ),
+    [cardStyle, openProduct]
+  );
 
   useFocusEffect(useCallback(() => {
     void loadMenu();
@@ -53,10 +96,39 @@ export default function ProductsScreen() {
         ]}
         columnWrapperStyle={columns > 1 ? styles.columns : undefined}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         ListHeaderComponent={
           <View>
             <Text style={styles.title}>Más Café</Text>
             <Text style={styles.subtitle}>Campus Principal · Pide y recoge</Text>
+
+            <Text style={styles.searchTitle}>Buscar</Text>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search-outline" size={20} color={colors.muted} />
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Busca café, bebidas o comida"
+                placeholderTextColor={colors.muted}
+                returnKeyType="search"
+                autoCorrect={false}
+                accessibilityLabel="Buscar productos"
+              />
+              {searchQuery.length > 0 && (
+                <Pressable
+                  style={styles.clearSearch}
+                  onPress={() => setSearchQuery('')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Limpiar búsqueda"
+                  hitSlop={8}
+                >
+                  <Ionicons name="close-circle" size={20} color={colors.muted} />
+                </Pressable>
+              )}
+            </View>
+
             <Text style={styles.categoriesTitle}>Categorías</Text>
 
             <CategoryFilter
@@ -75,17 +147,16 @@ export default function ProductsScreen() {
             </View>
           </View>
         }
-        renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            style={{ width: cardWidth, maxWidth: cardWidth }}
-            onPress={(id) => router.push(`/products/${id}`)}
-          />
-        )}
+        renderItem={renderProduct}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No hay productos</Text>
-            <Text style={styles.emptyText}>No encontramos productos en esta categoría.</Text>
+            <Ionicons name="search-outline" size={30} color={colors.muted} />
+            <Text style={styles.emptyTitle}>No encontramos resultados</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim()
+                ? `Prueba con otra palabra o cambia la categoría.`
+                : 'No encontramos productos en esta categoría.'}
+            </Text>
           </View>
         }
       />
@@ -121,8 +192,47 @@ const styles = StyleSheet.create({
     color: colors.muted,
     marginTop: spacing.xs,
   },
-  categoriesTitle: {
+  searchTitle: {
     marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    fontSize: font.small,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  searchContainer: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.chipBorder,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    ...Platform.select({
+      web: { boxShadow: '0px 2px 8px rgba(59, 35, 24, 0.04)' },
+      default: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 1,
+      },
+    }),
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 48,
+    paddingVertical: 0,
+    fontSize: font.body,
+    color: colors.text,
+  },
+  clearSearch: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoriesTitle: {
+    marginTop: spacing.xl,
     fontSize: font.small,
     fontWeight: '700',
     color: colors.text,

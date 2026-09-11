@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
+import { getCartPricing } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
   MAX_ITEMS_PER_ORDER,
@@ -38,9 +39,11 @@ function formatRemainingTime(milliseconds: number): string {
 function CartProduct({
   item,
   onLimit,
+  onEdit,
 }: {
   item: CartItem;
   onLimit: (message: string) => void;
+  onEdit: (item: CartItem) => void;
 }) {
   const increaseQuantity = useProductsStore((state) => state.increaseQuantity);
   const decreaseQuantity = useProductsStore((state) => state.decreaseQuantity);
@@ -63,6 +66,16 @@ function CartProduct({
 
         {details.length > 0 && <Text style={styles.details}>{details}</Text>}
         {item.notes.length > 0 && <Text style={styles.notes}>Nota: {item.notes}</Text>}
+
+        <Pressable
+          style={styles.editButton}
+          onPress={() => onEdit(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`Editar opciones de ${item.name}`}
+        >
+          <Ionicons name="create-outline" size={15} color={colors.primary} />
+          <Text style={styles.editButtonText}>Editar opciones</Text>
+        </Pressable>
 
         <View style={styles.cardFooter}>
           <View style={styles.quantityControl}>
@@ -103,7 +116,7 @@ export default function CartScreen() {
   const [now, setNow] = useState(Date.now());
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const total = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const pricing = getCartPricing(cart, new Date(now));
   const remainingMs = latestOrderAt
     ? Math.max(0, latestOrderAt + ORDER_COOLDOWN_MS - now)
     : 0;
@@ -173,6 +186,13 @@ export default function CartScreen() {
     });
   };
 
+  const editCartItem = (item: CartItem) => {
+    router.push({
+      pathname: '/products/[id]',
+      params: { id: item.productId, cartItemId: item.cartItemId },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <FlatList
@@ -198,7 +218,9 @@ export default function CartScreen() {
             )}
           </View>
         }
-        renderItem={({ item }) => <CartProduct item={item} onLimit={showCartLimit} />}
+        renderItem={({ item }) => (
+          <CartProduct item={item} onLimit={showCartLimit} onEdit={editCartItem} />
+        )}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="cart-outline" size={58} color={colors.chipBorder} />
@@ -218,9 +240,24 @@ export default function CartScreen() {
                   {cartQuantity}/{MAX_ITEMS_PER_ORDER} artículos permitidos
                 </Text>
               </View>
+              {pricing.discount > 0 && (
+                <View style={styles.subtotalRow}>
+                  <Text style={styles.subtotalLabel}>Subtotal</Text>
+                  <Text style={styles.subtotalValue}>${pricing.subtotal.toFixed(2)}</Text>
+                </View>
+              )}
+              {pricing.appliedPromotions.map((promotion) => (
+                <View key={promotion.id} style={styles.promotionRow}>
+                  <View style={styles.promotionLabel}>
+                    <Ionicons name="pricetag" size={15} color={colors.success} />
+                    <Text style={styles.promotionText}>{promotion.title}</Text>
+                  </View>
+                  <Text style={styles.promotionDiscount}>-${promotion.discount.toFixed(2)}</Text>
+                </View>
+              ))}
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>Total</Text>
-                <Text style={styles.total}>${total.toFixed(2)}</Text>
+                <Text style={styles.total}>${pricing.total.toFixed(2)}</Text>
               </View>
               <Pressable
                 style={[styles.orderButton, (remainingMs > 0 || isSubmittingOrder) && styles.orderButtonDisabled]}
@@ -290,6 +327,15 @@ const styles = StyleSheet.create({
   name: { flex: 1, marginRight: spacing.sm, fontSize: font.body, fontWeight: '700', color: colors.text },
   details: { marginTop: spacing.xs, fontSize: font.tiny, lineHeight: 16, color: colors.muted },
   notes: { marginTop: spacing.xs, fontSize: font.tiny, fontStyle: 'italic', color: colors.muted },
+  editButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: spacing.sm,
+    paddingVertical: 4,
+  },
+  editButtonText: { fontSize: font.tiny, fontWeight: '700', color: colors.primary },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -311,6 +357,27 @@ const styles = StyleSheet.create({
   summary: { marginTop: spacing.md, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border },
   limitRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   limitText: { fontSize: font.small, color: colors.muted },
+  subtotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  subtotalLabel: { fontSize: font.small, color: colors.muted },
+  subtotalValue: { fontSize: font.small, color: colors.muted },
+  promotionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: '#E8F3E8',
+  },
+  promotionLabel: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  promotionText: { flex: 1, fontSize: font.tiny, fontWeight: '700', color: colors.success },
+  promotionDiscount: { fontSize: font.small, fontWeight: '800', color: colors.success },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalLabel: { fontSize: font.heading, fontWeight: '700', color: colors.text },
   total: { fontSize: 22, fontWeight: '800', color: colors.primary },

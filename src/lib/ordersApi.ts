@@ -17,6 +17,10 @@ type RemoteOrder = {
   status: OrderStatus;
   createdAt: string;
   total: number | string;
+  statusEvents?: Array<{
+    status: OrderStatus;
+    createdAt: string;
+  }>;
   items: Array<{
     productId: string;
     name: string;
@@ -51,6 +55,10 @@ function toOrder(order: RemoteOrder): Order {
     status: order.status,
     total: Number(order.total),
     createdAt: new Date(order.createdAt).getTime(),
+    statusEvents: (order.statusEvents ?? []).map((event) => ({
+      status: event.status,
+      createdAt: new Date(event.createdAt).getTime(),
+    })),
     items: order.items.map((item) => ({
       cartItemId: `${order.id}-${item.productId}`,
       productId: item.productId,
@@ -80,12 +88,14 @@ export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
 
   saveTrackingToken(created.tracking_token);
 
+  const createdAt = Date.now();
   return {
     id: created.order_id,
     number: created.pickup_code,
     status: created.status,
     total: Number(created.total),
-    createdAt: Date.now(),
+    createdAt,
+    statusEvents: [{ status: created.status, createdAt }],
     items: items.map((item) => ({ ...item })),
   };
 }

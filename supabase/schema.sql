@@ -160,6 +160,11 @@ declare
   v_pickup_code text;
   v_tracking_token uuid;
   v_total numeric := 0;
+  v_weekday integer;
+  v_cappuccino_quantity integer := 0;
+  v_brownie_quantity integer := 0;
+  v_matcha_quantity integer := 0;
+  v_promotion_discount numeric := 0;
 begin
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     raise exception 'El pedido debe contener al menos un artículo';
@@ -215,6 +220,32 @@ begin
 
     v_total := v_total + (v_unit_price * v_quantity);
   end loop;
+
+  -- Las promociones se validan con la fecha de la cafetería y con los
+  -- productos guardados por el servidor. Los extras conservan su precio.
+  v_weekday := extract(isodow from (now() at time zone 'America/Cancun'))::integer;
+
+  if v_weekday = 2 then
+    select coalesce(sum(quantity), 0)::integer
+    into v_cappuccino_quantity
+    from public.order_items
+    where order_id = v_order_id and product_id = '2';
+
+    -- Martes: por cada par, el segundo cappuccino baja de $60 a $45.
+    v_promotion_discount := (v_cappuccino_quantity / 2) * 15;
+  elsif v_weekday = 4 then
+    select
+      coalesce(sum(quantity) filter (where product_id = '55'), 0)::integer,
+      coalesce(sum(quantity) filter (where product_id = '7'), 0)::integer
+    into v_brownie_quantity, v_matcha_quantity
+    from public.order_items
+    where order_id = v_order_id and product_id in ('55', '7');
+
+    -- Jueves: cada pareja de brownie + matcha recibe $15 de descuento.
+    v_promotion_discount := least(v_brownie_quantity, v_matcha_quantity) * 15;
+  end if;
+
+  v_total := greatest(0, v_total - v_promotion_discount);
 
   update public.orders
   set total = v_total, updated_at = now()

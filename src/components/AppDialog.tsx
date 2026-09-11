@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { type StyleProp, type TextStyle, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { type StyleProp, type TextStyle, Modal, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 
 export type AppDialogAction = {
@@ -104,11 +104,16 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.lg,
     backgroundColor: colors.background,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    elevation: 10,
+    ...Platform.select({
+      web: { boxShadow: '0px 10px 22px rgba(0, 0, 0, 0.18)' },
+      default: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.18,
+        shadowRadius: 22,
+        elevation: 10,
+      },
+    }),
   },
   iconContainer: {
     width: 56,

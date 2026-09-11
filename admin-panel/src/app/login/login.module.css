@@ -1,0 +1,43 @@
+.page { min-height: 100vh; display: grid; grid-template-columns: minmax(360px, .92fr) 1.08fr; background: var(--cream-50); }
+.brandPanel { position: relative; display: flex; min-height: 100vh; flex-direction: column; overflow: hidden; padding: 48px clamp(32px, 5vw, 76px); color: white; background: var(--coffee-900); }
+.brandPanel::before { position: absolute; right: -170px; bottom: -160px; width: 480px; height: 480px; content: ""; border: 1px solid rgba(255,255,255,.13); border-radius: 50%; box-shadow: 0 0 0 60px rgba(255,255,255,.025), 0 0 0 120px rgba(255,255,255,.02); }
+.brandPanel::after { position: absolute; top: 0; left: 0; width: 7px; height: 100%; content: ""; background: #d58b55; }
+.brandMark { display: grid; width: 54px; height: 54px; place-items: center; flex: 0 0 auto; border-radius: 17px; color: var(--coffee-900); background: var(--cream-200); }
+.brandCopy { display: flex; flex-direction: column; gap: 3px; margin-top: -51px; margin-left: 70px; }
+.brandCopy span { font-size: .78rem; font-weight: 850; letter-spacing: .16em; color: #e8b68f; }
+.brandCopy strong { font-size: 1.08rem; }
+.brandMessage { position: relative; z-index: 1; margin: auto 0; }
+.brandMessage p, .eyebrow { margin: 0; font-size: .76rem; font-weight: 850; letter-spacing: .15em; }
+.brandMessage p { color: #e8b68f; }
+.brandMessage h1 { max-width: 650px; margin: 20px 0 18px; font-size: clamp(2.25rem, 4.2vw, 4.6rem); line-height: .98; letter-spacing: -.055em; }
+.brandMessage span { display: block; max-width: 450px; font-size: 1rem; line-height: 1.6; color: rgba(255,255,255,.68); }
+.securityNote { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; font-size: .88rem; color: rgba(255,255,255,.7); }
+.loginPanel { display: grid; min-height: 100vh; place-items: center; padding: 36px; background: radial-gradient(circle at 85% 12%, rgba(232,182,143,.22), transparent 28%), var(--cream-50); }
+.card { width: min(100%, 430px); padding: 42px; border: 1px solid var(--border); border-radius: 28px; background: white; box-shadow: var(--shadow); }
+.eyebrow { color: var(--orange); }
+.card h2 { margin: 9px 0 8px; font-size: 2rem; letter-spacing: -.035em; }
+.description { margin: 0; font-size: .96rem; line-height: 1.5; color: var(--muted); }
+.form { display: grid; gap: 20px; margin-top: 30px; }
+.field { display: grid; gap: 8px; font-size: .88rem; font-weight: 700; color: var(--coffee-950); }
+.inputShell { display: flex; min-height: 52px; align-items: center; gap: 11px; padding: 0 14px; border: 1px solid var(--cream-300); border-radius: 15px; color: var(--muted); background: var(--cream-50); transition: border-color .2s, box-shadow .2s; }
+.inputShell:focus-within { border-color: var(--coffee-700); box-shadow: 0 0 0 4px rgba(113,72,56,.09); }
+.inputShell input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--ink); background: transparent; }
+.inputShell input::placeholder { color: #9d9189; }
+.reveal { display: grid; padding: 5px; place-items: center; border: 0; color: var(--muted); background: transparent; cursor: pointer; }
+.error { margin: -5px 0 0; padding: 11px 13px; border-radius: 12px; font-size: .86rem; color: var(--red); background: var(--red-soft); }
+.submit { display: flex; min-height: 52px; align-items: center; justify-content: center; gap: 9px; border: 0; border-radius: 15px; font-weight: 800; color: white; background: var(--coffee-900); box-shadow: 0 10px 22px rgba(59,35,24,.18); cursor: pointer; transition: transform .18s, background .18s; }
+.submit:hover:not(:disabled) { transform: translateY(-1px); background: var(--coffee-800); }
+.submit:disabled { cursor: wait; opacity: .72; }
+.spinner { animation: spin .8s linear infinite; }
+.support { margin: 24px 0 0; font-size: .78rem; line-height: 1.5; text-align: center; color: var(--muted); }
+.mobileBrand { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 800px) {
+  .page { grid-template-columns: 1fr; }
+  .brandPanel { display: none; }
+  .loginPanel { align-content: center; padding: 24px; }
+  .mobileBrand { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; font-size: 1.18rem; color: var(--coffee-900); }
+  .mobileBrand .brandMark { width: 46px; height: 46px; border-radius: 15px; }
+  .card { padding: 30px 24px; border-radius: 22px; }
+}
+

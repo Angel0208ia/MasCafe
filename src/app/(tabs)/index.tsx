@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +12,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppDialog from '@/components/AppDialog';
+import { PROMOTIONS, isPromotionActive } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ALL_CATEGORIES, useProductsStore } from '@/store/productsStore';
 
@@ -17,6 +21,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const setCategory = useProductsStore((state) => state.setCategory);
+  const products = useProductsStore((state) => state.products);
+  const addPromotionToCart = useProductsStore((state) => state.addPromotionToCart);
+  const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
+  const [today, setToday] = useState(() => new Date());
   const cartCount = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
   );
@@ -27,14 +35,25 @@ export default function HomeScreen() {
   };
 
   const horizontalPadding = getScreenPadding(width);
-  const pageWidth = Math.min(width, layout.contentMaxWidth);
-  const contentWidth = pageWidth - horizontalPadding * 2;
   const isDesktop = width >= layout.desktopBreakpoint;
   const isCompact = width < 360;
-  const posterWidth = isDesktop
-    ? Math.min(500, contentWidth * 0.55)
-    : contentWidth;
-  const posterHeight = posterWidth * (1448 / 1086);
+
+  useFocusEffect(useCallback(() => {
+    setToday(new Date());
+  }, []));
+
+  const addPromotion = (promotionId: string) => {
+    const result = addPromotionToCart(promotionId);
+    if (!result.success) {
+      setDialog({
+        title: 'Promoción no disponible',
+        message: result.message ?? 'No fue posible agregar esta promoción.',
+      });
+      return;
+    }
+
+    router.navigate('/cart');
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -100,48 +119,107 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>Promociones destacadas</Text>
 
         <View style={[styles.promotions, isDesktop && styles.promotionsDesktop]}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.promoPosterCard,
-              { width: posterWidth, height: posterHeight },
-              pressed && styles.pressed,
-            ]}
-            onPress={openMenu}
-            accessibilityRole="button"
-            accessibilityLabel="Ver promociones de Más Café"
-          >
-            <Image
-              source={require('@/assets/images/promociones-semanales.jpeg')}
-              style={{ width: posterWidth, height: posterHeight }}
-              resizeMode="contain"
-            />
-          </Pressable>
+          {PROMOTIONS.map((promotion) => {
+            const active = isPromotionActive(promotion, today);
+            const featuredProducts = promotion.requirements.flatMap((requirement) =>
+              Array.from({ length: requirement.quantity }, (_, index) => ({
+                key: `${requirement.productId}-${index}`,
+                product: products.find((item) => item.id === requirement.productId),
+              }))
+            );
 
-          <View style={[styles.promoDetails, isDesktop && styles.promoDetailsDesktop]}>
-            <View style={styles.promoDetailCard}>
-              <View style={styles.promoDayBadge}>
-                <Text style={styles.promoDay}>MARTES</Text>
-              </View>
-              <View style={styles.promoDetailContent}>
-                <Text style={styles.promoDetailTitle}>Segundo cappuccino por $45</Text>
-                <Text style={styles.promoDetailText}>Compra un cappuccino y aprovecha el precio especial.</Text>
-              </View>
-            </View>
+            return (
+              <Pressable
+                key={promotion.id}
+                style={({ pressed }) => [
+                  styles.promotionCard,
+                  isDesktop && styles.promotionCardDesktop,
+                  !active && styles.promotionCardInactive,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => addPromotion(promotion.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`${promotion.title}. Válida los ${promotion.dayLabel.toLowerCase()}.`}
+              >
+                <View
+                  style={[styles.promotionAccent, { backgroundColor: promotion.accentColor }]}
+                />
+                <View style={styles.promotionHeader}>
+                  <View style={[styles.promoDayBadge, { backgroundColor: promotion.softColor }]}>
+                    <Ionicons name="calendar-outline" size={13} color={promotion.accentColor} />
+                    <Text style={[styles.promoDay, { color: promotion.accentColor }]}>
+                      {promotion.dayLabel}
+                    </Text>
+                  </View>
+                  <View style={[styles.availabilityBadge, active && styles.availabilityBadgeActive]}>
+                    <Text style={[styles.availabilityText, active && styles.availabilityTextActive]}>
+                      {active ? 'Disponible hoy' : `Solo ${promotion.dayLabel.toLowerCase()}`}
+                    </Text>
+                  </View>
+                </View>
 
-            <View style={styles.promoDetailCard}>
-              <View style={[styles.promoDayBadge, styles.promoDayBadgeGreen]}>
-                <Text style={styles.promoDay}>JUEVES</Text>
-              </View>
-              <View style={styles.promoDetailContent}>
-                <Text style={styles.promoDetailTitle}>Brownie + matcha por $90</Text>
-                <Text style={styles.promoDetailText}>Disfruta el combo válido durante los jueves.</Text>
-              </View>
-            </View>
-          </View>
+                <View style={styles.promotionProducts}>
+                  {featuredProducts.map(({ key, product }, index) => (
+                    <View key={key} style={styles.promotionProduct}>
+                      {index > 0 && (
+                        <View style={styles.promotionPlusBadge}>
+                          <Text style={styles.promotionPlus}>+</Text>
+                        </View>
+                      )}
+                      {product ? (
+                        <Image source={{ uri: product.image }} style={styles.promotionImage} />
+                      ) : (
+                        <View style={styles.promotionImagePlaceholder} />
+                      )}
+                      <Text style={styles.promotionProductName} numberOfLines={2}>
+                        {product?.name ?? 'Producto'}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Text style={styles.promotionTitle} numberOfLines={2}>{promotion.title}</Text>
+                <Text style={styles.promotionDescription} numberOfLines={2}>
+                  {promotion.description}
+                </Text>
+
+                <View style={styles.promotionFooter}>
+                  <View>
+                    <Text style={styles.promotionPrice}>
+                      {promotion.priceLabel}
+                    </Text>
+                    <Text style={styles.promotionSavings}>Ahorras ${promotion.discountPerBundle}</Text>
+                  </View>
+                  <View style={[styles.promotionAction, !active && styles.promotionActionInactive]}>
+                    <Ionicons
+                      name={active ? 'add' : 'calendar-outline'}
+                      size={17}
+                      color={active ? colors.onPrimary : colors.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.promotionActionText,
+                        !active && styles.promotionActionTextInactive,
+                      ]}
+                    >
+                      {active ? 'Agregar' : 'Ver vigencia'}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
         </View>
         </View>
       </ScrollView>
 
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        icon="pricetag-outline"
+        onClose={() => setDialog(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -313,69 +391,178 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
   },
-  promoPosterCard: {
-    overflow: 'hidden',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
   promotions: {
     width: '100%',
+    gap: spacing.md,
   },
   promotionsDesktop: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xl,
+    alignItems: 'stretch',
+    flexWrap: 'wrap',
   },
-  promoDetails: {
-    gap: spacing.sm,
-    marginTop: spacing.md,
+  promotionCard: {
+    width: '100%',
+    minHeight: 365,
+    overflow: 'hidden',
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E9DDCF',
+    borderRadius: radius.lg,
+    backgroundColor: '#FFFCF8',
+    ...Platform.select({
+      web: { boxShadow: '0px 4px 12px rgba(59, 35, 24, 0.07)' },
+      default: {
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+        elevation: 2,
+      },
+    }),
   },
-  promoDetailsDesktop: {
-    flex: 1,
-    marginTop: 0,
+  promotionCardDesktop: { flex: 1, minWidth: 300 },
+  promotionCardInactive: { backgroundColor: '#FCF9F5' },
+  promotionAccent: {
+    position: 'absolute',
+    top: 0,
+    left: spacing.lg,
+    width: 48,
+    height: 4,
+    borderBottomLeftRadius: radius.pill,
+    borderBottomRightRadius: radius.pill,
   },
-  promoDetailCard: {
+  promotionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
   },
   promoDayBadge: {
-    minWidth: 62,
+    minWidth: 82,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
     paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
-    backgroundColor: '#E9580C',
-  },
-  promoDayBadgeGreen: {
-    backgroundColor: '#688B3A',
+    paddingVertical: 7,
+    borderRadius: radius.pill,
   },
   promoDay: {
     fontSize: font.tiny,
     fontWeight: '800',
-    color: colors.onPrimary,
   },
-  promoDetailContent: {
+  availabilityBadge: {
+    minWidth: 112,
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: '#F8F1E8',
+  },
+  availabilityBadgeActive: { backgroundColor: '#E8F3E8' },
+  availabilityText: { fontSize: font.tiny, fontWeight: '700', color: colors.muted },
+  availabilityTextActive: { color: colors.success },
+  promotionProducts: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.lg,
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+  },
+  promotionProduct: {
     flex: 1,
+    position: 'relative',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  promoDetailTitle: {
-    fontSize: font.small,
+  promotionPlusBadge: {
+    position: 'absolute',
+    left: -22,
+    top: 22,
+    zIndex: 1,
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  promotionPlus: { fontSize: 21, lineHeight: 23, fontWeight: '800', color: colors.primary },
+  promotionImage: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.thumb,
+  },
+  promotionImagePlaceholder: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.thumb,
+  },
+  promotionProductName: {
+    width: '100%',
+    fontSize: font.tiny,
+    lineHeight: 15,
+    fontWeight: '700',
+    textAlign: 'center',
+    color: colors.text,
+  },
+  promotionTitle: {
+    minHeight: 52,
+    marginTop: spacing.lg,
+    fontSize: font.heading,
     fontWeight: '800',
     color: colors.text,
   },
-  promoDetailText: {
-    marginTop: 2,
-    fontSize: font.tiny,
-    lineHeight: 15,
+  promotionDescription: {
+    minHeight: 40,
+    marginTop: spacing.xs,
+    fontSize: font.small,
+    lineHeight: 19,
     color: colors.muted,
   },
+  promotionFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginTop: 'auto',
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E6DB',
+  },
+  promotionPrice: { fontSize: 21, fontWeight: '900', color: colors.primary },
+  promotionSavings: { marginTop: 2, fontSize: font.tiny, color: colors.muted },
+  promotionAction: {
+    minWidth: 126,
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  promotionActionText: { fontSize: font.small, fontWeight: '800', color: colors.onPrimary },
+  promotionActionInactive: {
+    borderWidth: 1,
+    borderColor: colors.chipBorder,
+    backgroundColor: colors.thumb,
+  },
+  promotionActionTextInactive: { color: colors.primary },
   pressed: {
     opacity: 0.75,
   },

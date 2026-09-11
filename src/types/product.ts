@@ -56,9 +56,15 @@ export type Order = {
   total: number;
   createdAt: number;
   status: OrderStatus;
+  statusEvents: OrderStatusEvent[];
 };
 
 export type OrderStatus = 'received' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+
+export type OrderStatusEvent = {
+  status: OrderStatus;
+  createdAt: number;
+};
 
 export type CartActionResult = {
   success: boolean;

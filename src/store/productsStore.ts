@@ -10,6 +10,8 @@ import type {
 } from '../types/product';
 import { fetchMenu } from '../lib/menuApi';
 import { createAnonymousOrder, fetchTrackedOrders } from '../lib/ordersApi';
+import { calculateUnitPrice, createDefaultSelections } from '../lib/productCustomizations';
+import { getPromotionById, isPromotionActive } from '../constants/promotions';
 
 export type { CartItem, Product } from '../types/product';
 
@@ -48,6 +50,21 @@ function getCartQuantity(cart: CartItem[]): number {
   return cart.reduce((total, item) => total + item.quantity, 0);
 }
 
+function preserveUnchangedProducts(current: Product[], incoming: Product[]): Product[] {
+  const currentById = new Map(current.map((product) => [product.id, product]));
+  const reconciled = incoming.map((product) => {
+    const existing = currentById.get(product.id);
+    return existing && JSON.stringify(existing) === JSON.stringify(product)
+      ? existing
+      : product;
+  });
+
+  return current.length === reconciled.length &&
+    current.every((product, index) => product === reconciled[index])
+    ? current
+    : reconciled;
+}
+
 type ProductsState = {
   products: Product[];
   selectedCategory: string;
@@ -56,6 +73,8 @@ type ProductsState = {
   isSubmittingOrder: boolean;
   setCategory: (category: string) => void;
   addToCart: (item: NewCartItem) => CartActionResult;
+  addPromotionToCart: (promotionId: string) => CartActionResult;
+  updateCartItem: (cartItemId: string, item: NewCartItem) => CartActionResult;
   increaseQuantity: (cartItemId: string) => CartActionResult;
   decreaseQuantity: (cartItemId: string) => void;
   removeFromCart: (cartItemId: string) => void;
@@ -91,6 +110,87 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       cart: [...state.cart, { ...item, cartItemId: createCartItemId() }],
     }));
 
+    return { success: true };
+  },
+
+  addPromotionToCart: (promotionId) => {
+    const promotion = getPromotionById(promotionId);
+    if (!promotion) {
+      return { success: false, message: 'No encontramos esta promoción.' };
+    }
+
+    if (!isPromotionActive(promotion)) {
+      return {
+        success: false,
+        message: `Esta promoción es válida únicamente los ${promotion.dayLabel.toLowerCase()}.`,
+      };
+    }
+
+    const state = get();
+    const promotionQuantity = promotion.requirements.reduce(
+      (total, requirement) => total + requirement.quantity,
+      0
+    );
+
+    if (getCartQuantity(state.cart) + promotionQuantity > MAX_ITEMS_PER_ORDER) {
+      return {
+        success: false,
+        message: `Necesitas espacio para ${promotionQuantity} artículos. El máximo por pedido es ${MAX_ITEMS_PER_ORDER}.`,
+      };
+    }
+
+    const promotionItems: CartItem[] = [];
+
+    for (const requirement of promotion.requirements) {
+      const product = state.products.find((item) => item.id === requirement.productId);
+      if (!product?.available) {
+        return {
+          success: false,
+          message: 'Uno de los productos de la promoción no está disponible.',
+        };
+      }
+
+      for (let index = 0; index < requirement.quantity; index += 1) {
+        const selections = createDefaultSelections(product);
+        promotionItems.push({
+          cartItemId: createCartItemId(),
+          productId: product.id,
+          name: product.name,
+          image: product.image,
+          quantity: 1,
+          unitPrice: calculateUnitPrice(product, selections),
+          selections,
+          notes: '',
+        });
+      }
+    }
+
+    set({ cart: [...state.cart, ...promotionItems] });
+    return { success: true };
+  },
+
+  updateCartItem: (cartItemId, item) => {
+    const state = get();
+    const currentItem = state.cart.find((cartItem) => cartItem.cartItemId === cartItemId);
+    if (!currentItem) {
+      return { success: false, message: 'Este artículo ya no está en el carrito.' };
+    }
+
+    const quantityWithoutCurrentItem = getCartQuantity(state.cart) - currentItem.quantity;
+    if (quantityWithoutCurrentItem + item.quantity > MAX_ITEMS_PER_ORDER) {
+      return {
+        success: false,
+        message: `Solo puedes pedir ${MAX_ITEMS_PER_ORDER} artículos por pedido.`,
+      };
+    }
+
+    set({
+      cart: state.cart.map((cartItem) =>
+        cartItem.cartItemId === cartItemId
+          ? { ...item, cartItemId }
+          : cartItem
+      ),
+    });
     return { success: true };
   },
 
@@ -180,7 +280,11 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   loadMenu: async () => {
     try {
       const products = await fetchMenu();
-      if (products.length > 0) set({ products });
+      if (products.length > 0) {
+        set((state) => ({
+          products: preserveUnchangedProducts(state.products, products),
+        }));
+      }
     } catch {
       // El catálogo incluido permite seguir explorando si aún no hay conexión.
     }

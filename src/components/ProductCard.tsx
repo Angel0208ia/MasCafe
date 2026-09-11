@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import {
   Image,
   Pressable,
@@ -17,7 +18,7 @@ type ProductCardProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export default function ProductCard({ product, onPress, style }: ProductCardProps) {
+function ProductCard({ product, onPress, style }: ProductCardProps) {
   const hasPriceOptions = product.customizations?.some((group) =>
     group.options.some((option) => option.extraPrice > 0)
   );
@@ -57,6 +58,8 @@ export default function ProductCard({ product, onPress, style }: ProductCardProp
     </Pressable>
   );
 }
+
+export default memo(ProductCard);
 
 const styles = StyleSheet.create({
   card: {

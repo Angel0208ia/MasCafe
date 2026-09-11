@@ -1,16 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Image,
+  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '../../components/AppDialog';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '../../constants/theme';
@@ -39,11 +40,15 @@ function createInitialSelections(product: Product): SelectionState {
 }
 
 export default function ProductDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, cartItemId } = useLocalSearchParams<{ id: string; cartItemId?: string }>();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const product = useProductsStore((state) => state.getProductById(id));
+  const cartItem = useProductsStore((state) =>
+    cartItemId ? state.cart.find((item) => item.cartItemId === cartItemId) : undefined
+  );
   const addToCart = useProductsStore((state) => state.addToCart);
+  const updateCartItem = useProductsStore((state) => state.updateCartItem);
   const cartQuantity = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
   );
@@ -58,11 +63,20 @@ export default function ProductDetailScreen() {
 
   useEffect(() => {
     if (product) {
-      setSelections(createInitialSelections(product));
-      setQuantity(1);
-      setNotes('');
+      const savedSelections = cartItem?.productId === product.id
+        ? Object.fromEntries(
+            cartItem.selections.map((selection) => [
+              selection.groupId,
+              selection.options.map((option) => option.id),
+            ])
+          )
+        : null;
+
+      setSelections(savedSelections ?? createInitialSelections(product));
+      setQuantity(cartItem?.productId === product.id ? cartItem.quantity : 1);
+      setNotes(cartItem?.productId === product.id ? cartItem.notes : '');
     }
-  }, [product?.id]);
+  }, [cartItem, product]);
 
   const visibleGroups = useMemo(() => {
     const groups = product?.customizations ?? [];
@@ -82,8 +96,10 @@ export default function ProductDetailScreen() {
     }, product.price);
   }, [product, selections, visibleGroups]);
 
-  const availableSlots = MAX_ITEMS_PER_ORDER - cartQuantity;
+  const isEditing = Boolean(cartItemId);
+  const availableSlots = MAX_ITEMS_PER_ORDER - cartQuantity + (cartItem?.quantity ?? 0);
   const canAddToCart = availableSlots > 0;
+  const canSubmit = isEditing ? Boolean(cartItem) : canAddToCart;
   const horizontalPadding = getScreenPadding(width);
   const isDesktop = width >= layout.desktopBreakpoint;
 
@@ -173,7 +189,16 @@ export default function ProductDetailScreen() {
   const addProduct = () => {
     if (!validateSelections()) return;
 
-    const result = addToCart({
+    if (isEditing && !cartItem) {
+      setDialog({
+        title: 'Artículo no disponible',
+        message: 'Este artículo ya no se encuentra en el carrito.',
+        icon: 'cart-outline',
+      });
+      return;
+    }
+
+    const nextItem = {
       productId: product.id,
       name: product.name,
       image: product.image,
@@ -181,7 +206,11 @@ export default function ProductDetailScreen() {
       unitPrice,
       selections: buildSelections(),
       notes: notes.trim(),
-    });
+    };
+
+    const result = isEditing && cartItem
+      ? updateCartItem(cartItem.cartItemId, nextItem)
+      : addToCart(nextItem);
 
     if (!result.success) {
       setDialog({
@@ -189,6 +218,11 @@ export default function ProductDetailScreen() {
         message: result.message ?? 'El carrito alcanzó el límite permitido.',
         icon: 'bag-handle-outline',
       });
+      return;
+    }
+
+    if (isEditing) {
+      router.dismissTo('/cart');
       return;
     }
 
@@ -205,7 +239,21 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['bottom', 'left', 'right']}>
-      <ScrollView style={styles.screen} contentContainerStyle={styles.scrollContent}>
+      <Stack.Screen
+        options={{
+          title: isEditing ? 'Editar producto' : 'Producto',
+          headerBackTitle: isEditing ? 'Carrito' : 'Menú',
+        }}
+      />
+      <KeyboardAwareScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.scrollContent}
+        enabled={Platform.OS !== 'web'}
+        bottomOffset={spacing.xl}
+        extraKeyboardSpace={spacing.lg}
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.content, { paddingHorizontal: horizontalPadding }]}>
           <View style={[styles.productLayout, isDesktop && styles.productLayoutDesktop]}>
             <View style={[styles.summaryColumn, isDesktop && styles.summaryColumnDesktop]}>
@@ -310,19 +358,25 @@ export default function ProductDetailScreen() {
               </View>
 
               <Pressable
-                style={[styles.addButton, !canAddToCart && styles.addButtonDisabled]}
+                style={[styles.addButton, !canSubmit && styles.addButtonDisabled]}
                 onPress={addProduct}
-                disabled={!canAddToCart}
+                disabled={!canSubmit}
               >
                 <Text style={styles.addButtonText}>
-                  {canAddToCart ? 'Agregar al carrito' : 'Carrito lleno'}
+                  {isEditing && !cartItem
+                    ? 'Artículo eliminado'
+                    : isEditing
+                    ? 'Guardar cambios'
+                    : canAddToCart
+                      ? 'Agregar al carrito'
+                      : 'Carrito lleno'}
                 </Text>
                 <Text style={styles.addButtonPrice}>${(unitPrice * quantity).toFixed(2)}</Text>
               </Pressable>
             </View>
           </View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       <AppDialog
         visible={dialog !== null}
