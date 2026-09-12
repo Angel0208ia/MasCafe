@@ -72,6 +72,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
     const { data, error } = await supabase
       .from("orders")
       .select(`id, pickup_code, status, total, created_at, updated_at, order_items (id, product_id, product_name, quantity, unit_price, selections, notes), order_status_events (id, status, created_at)`)
+      .neq("status", "cancelled")
       .order("created_at", { ascending: false })
       .limit(100);
     if (!error && data) {
@@ -187,7 +188,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
         const requested = String(record.status ?? "") as OrderStatus;
         if (!order) throw new Error("Pedido no encontrado");
         const allowed = requested === nextStatus(order.status)
-          || (requested === "cancelled" && ["received", "preparing"].includes(order.status));
+          || (requested === "cancelled" && order.status === "received");
         if (!allowed) throw new Error("Cambio de estado no permitido");
         const updated = await updateStatus(order, requested);
         if (!updated) throw new Error("No se pudo actualizar el pedido");
@@ -246,7 +247,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
 
 function OrderDetail({ order, updating, onUpdate }: { order: BusinessOrder; updating: boolean; onUpdate: (order: BusinessOrder, status: OrderStatus) => void }) {
   const next = nextStatus(order.status);
-  const canCancel = order.status === "received" || order.status === "preparing";
+  const canCancel = order.status === "received";
   const timeline: OrderStatus[] = ["received", "preparing", "ready", "delivered"];
   const progress = timeline.indexOf(order.status);
   const subtotal = order.order_items.reduce((total, item) => total + Number(item.unit_price) * item.quantity, 0);

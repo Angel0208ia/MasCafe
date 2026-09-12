@@ -73,4 +73,8 @@ export type CartActionResult = {
 
 export type PlaceOrderResult =
   | { success: true; order: Order }
-  | { success: false; reason: 'empty' | 'cooldown' | 'network' | 'busy'; remainingMs: number; message?: string };
+  | { success: false; reason: 'empty' | 'cooldown' | 'blocked' | 'network' | 'busy'; remainingMs: number; message?: string };
+
+export type CancelOrderResult =
+  | { success: true; orderId: string; blockedUntil: number; cancellationCount: number }
+  | { success: false; message: string };

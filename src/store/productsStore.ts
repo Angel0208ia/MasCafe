@@ -3,15 +3,22 @@ import productsData from '../data/products.json';
 import type {
   CartActionResult,
   CartItem,
+  CancelOrderResult,
   NewCartItem,
   Order,
   PlaceOrderResult,
   Product,
+  SelectedCustomization,
 } from '../types/product';
 import { fetchMenu } from '../lib/menuApi';
-import { createAnonymousOrder, fetchTrackedOrders } from '../lib/ordersApi';
+import {
+  cancelAnonymousOrder,
+  createAnonymousOrder,
+  fetchTrackedOrders,
+  getOrderingBlockedUntil,
+} from '../lib/ordersApi';
 import { calculateUnitPrice, createDefaultSelections } from '../lib/productCustomizations';
-import { getPromotionById, isPromotionActive } from '../constants/promotions';
+import { getCartPricing, getPromotionById, isPromotionActive } from '../constants/promotions';
 import { getProductImage } from '../constants/productImages';
 
 export type { CartItem, Product } from '../types/product';
@@ -19,6 +26,7 @@ export type { CartItem, Product } from '../types/product';
 export const ALL_CATEGORIES = 'Todos';
 export const MAX_ITEMS_PER_ORDER = 3;
 export const ORDER_COOLDOWN_MS = 30 * 60 * 1000;
+export const CANCELLATION_BLOCK_MS = 2 * 60 * 60 * 1000;
 
 export type CategoryOption = {
   label: string;
@@ -54,6 +62,31 @@ function getCartQuantity(cart: CartItem[]): number {
   return cart.reduce((total, item) => total + item.quantity, 0);
 }
 
+function restoreSelections(
+  product: Product,
+  previousSelections: SelectedCustomization[]
+): SelectedCustomization[] {
+  return (product.customizations ?? []).flatMap((group) => {
+    const previousOptionIds = new Set(
+      previousSelections.find((selection) => selection.groupId === group.id)
+        ?.options.map((option) => option.id) ?? []
+    );
+    const minimum = group.minSelections ?? (group.required ? 1 : 0);
+    const maximum = group.type === 'single' ? 1 : group.maxSelections ?? group.options.length;
+    const selected = group.options.filter((option) => previousOptionIds.has(option.id));
+
+    for (const option of group.options) {
+      if (selected.length >= minimum || selected.length >= maximum) break;
+      if (!selected.some((item) => item.id === option.id)) selected.push(option);
+    }
+
+    const options = selected.slice(0, maximum);
+    return options.length > 0
+      ? [{ groupId: group.id, groupName: group.name, options }]
+      : [];
+  });
+}
+
 function preserveUnchangedProducts(current: Product[], incoming: Product[]): Product[] {
   const currentById = new Map(current.map((product) => [product.id, product]));
   const reconciled = incoming.map((product) => {
@@ -74,16 +107,20 @@ type ProductsState = {
   selectedCategory: string;
   cart: CartItem[];
   orders: Order[];
+  orderingBlockedUntil: number;
   isSubmittingOrder: boolean;
+  isCancellingOrder: boolean;
   setCategory: (category: string) => void;
   addToCart: (item: NewCartItem) => CartActionResult;
   addPromotionToCart: (promotionId: string) => CartActionResult;
+  repeatOrder: (orderId: string) => CartActionResult;
   updateCartItem: (cartItemId: string, item: NewCartItem) => CartActionResult;
   increaseQuantity: (cartItemId: string) => CartActionResult;
   decreaseQuantity: (cartItemId: string) => void;
   removeFromCart: (cartItemId: string) => void;
   clearCart: () => void;
   placeOrder: () => Promise<PlaceOrderResult>;
+  cancelOrder: (orderId: string) => Promise<CancelOrderResult>;
   loadMenu: () => Promise<void>;
   loadTrackedOrders: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
@@ -96,7 +133,9 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   selectedCategory: ALL_CATEGORIES,
   cart: [],
   orders: [],
+  orderingBlockedUntil: getOrderingBlockedUntil(),
   isSubmittingOrder: false,
+  isCancellingOrder: false,
 
   setCategory: (category) => set({ selectedCategory: category }),
 
@@ -170,6 +209,70 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
 
     set({ cart: [...state.cart, ...promotionItems] });
+    return { success: true };
+  },
+
+  repeatOrder: (orderId) => {
+    const state = get();
+    const order = state.orders.find((item) => item.id === orderId);
+    if (!order || order.items.length === 0) {
+      return { success: false, message: 'No encontramos los artículos de este pedido.' };
+    }
+
+    const originalSubtotal = order.items.reduce(
+      (total, item) => total + item.unitPrice * item.quantity,
+      0
+    );
+    const originalPricing = getCartPricing(order.items, new Date(order.createdAt));
+    const originalPromotions = originalSubtotal > order.total
+      ? originalPricing.appliedPromotions
+      : [];
+
+    for (const appliedPromotion of originalPromotions) {
+      const promotion = getPromotionById(appliedPromotion.id);
+      if (promotion && !isPromotionActive(promotion)) {
+        return {
+          success: false,
+          message: `Este pedido incluía “${promotion.title}”, válida únicamente los ${promotion.dayLabel.toLowerCase()}.`,
+        };
+      }
+    }
+
+    const repeatedQuantity = getCartQuantity(order.items);
+    const availableSpace = MAX_ITEMS_PER_ORDER - getCartQuantity(state.cart);
+    if (repeatedQuantity > availableSpace) {
+      return {
+        success: false,
+        message: availableSpace > 0
+          ? `Este pedido tiene ${repeatedQuantity} artículos y solo queda espacio para ${availableSpace}.`
+          : 'Tu carrito ya alcanzó el máximo de artículos.',
+      };
+    }
+
+    const repeatedItems: CartItem[] = [];
+    for (const previousItem of order.items) {
+      const product = state.products.find((item) => item.id === previousItem.productId);
+      if (!product?.available) {
+        return {
+          success: false,
+          message: `${previousItem.name} ya no está disponible.`,
+        };
+      }
+
+      const selections = restoreSelections(product, previousItem.selections);
+      repeatedItems.push({
+        cartItemId: createCartItemId(),
+        productId: product.id,
+        name: product.name,
+        image: product.image,
+        quantity: previousItem.quantity,
+        unitPrice: calculateUnitPrice(product, selections),
+        selections,
+        notes: previousItem.notes,
+      });
+    }
+
+    set({ cart: [...state.cart, ...repeatedItems] });
     return { success: true };
   },
 
@@ -247,6 +350,15 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
 
     const now = Date.now();
+    if (now < state.orderingBlockedUntil) {
+      return {
+        success: false,
+        reason: 'blocked',
+        remainingMs: state.orderingBlockedUntil - now,
+        message: 'Tu cuenta temporal está bloqueada por cancelaciones reiteradas.',
+      };
+    }
+
     const latestOrder = state.orders[0];
     const nextOrderAt = latestOrder
       ? latestOrder.createdAt + ORDER_COOLDOWN_MS
@@ -278,6 +390,47 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       return { success: false, reason: 'network', remainingMs: 0, message };
     } finally {
       set({ isSubmittingOrder: false });
+    }
+  },
+
+  cancelOrder: async (orderId) => {
+    const state = get();
+    const order = state.orders.find((item) => item.id === orderId);
+    if (!order) return { success: false, message: 'No encontramos este pedido.' };
+    if (order.status !== 'received') {
+      return {
+        success: false,
+        message: order.status === 'preparing'
+          ? 'El pedido ya está en preparación y no se puede cancelar.'
+          : 'Este pedido ya no se puede cancelar.',
+      };
+    }
+    if (state.isCancellingOrder) {
+      return { success: false, message: 'La cancelación ya está en proceso.' };
+    }
+
+    set({ isCancellingOrder: true });
+    try {
+      const result = await cancelAnonymousOrder(orderId);
+      if (!result.success) return result;
+
+      const cancelledAt = Date.now();
+      set((current) => ({
+        orderingBlockedUntil: result.blockedUntil,
+        orders: current.orders.map((item) => item.id === orderId
+          ? {
+              ...item,
+              status: 'cancelled',
+              statusEvents: [
+                ...item.statusEvents.filter((event) => event.status !== 'cancelled'),
+                { status: 'cancelled', createdAt: cancelledAt },
+              ],
+            }
+          : item),
+      }));
+      return result;
+    } finally {
+      set({ isCancellingOrder: false });
     }
   },
 

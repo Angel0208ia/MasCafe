@@ -31,9 +31,12 @@ type DialogState = {
 
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return hours > 0
+    ? `${hours}:${(minutes % 60).toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    : `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function CartProduct({
@@ -110,6 +113,7 @@ export default function CartScreen() {
   const { width } = useWindowDimensions();
   const cart = useProductsStore((state) => state.cart);
   const latestOrderAt = useProductsStore((state) => state.orders[0]?.createdAt ?? null);
+  const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
   const clearCart = useProductsStore((state) => state.clearCart);
   const placeOrder = useProductsStore((state) => state.placeOrder);
   const isSubmittingOrder = useProductsStore((state) => state.isSubmittingOrder);
@@ -117,28 +121,35 @@ export default function CartScreen() {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const pricing = getCartPricing(cart, new Date(now));
-  const remainingMs = latestOrderAt
+  const regularCooldownRemainingMs = latestOrderAt
     ? Math.max(0, latestOrderAt + ORDER_COOLDOWN_MS - now)
     : 0;
+  const cancellationBlockRemainingMs = Math.max(0, orderingBlockedUntil - now);
+  const remainingMs = Math.max(regularCooldownRemainingMs, cancellationBlockRemainingMs);
+  const isCancellationBlocked = cancellationBlockRemainingMs > 0;
   const horizontalPadding = getScreenPadding(width);
 
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
-    if (!latestOrderAt || Date.now() >= latestOrderAt + ORDER_COOLDOWN_MS) return;
+    const restrictionUntil = Math.max(
+      latestOrderAt ? latestOrderAt + ORDER_COOLDOWN_MS : 0,
+      orderingBlockedUntil
+    );
+    if (Date.now() >= restrictionUntil) return;
 
     const timer = setInterval(() => {
       const currentTime = Date.now();
       setNow(currentTime);
-      if (currentTime >= latestOrderAt + ORDER_COOLDOWN_MS) clearInterval(timer);
+      if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrderAt]));
+  }, [latestOrderAt, orderingBlockedUntil]));
 
   const submitOrder = async () => {
     const result = await placeOrder();
 
     if (!result.success) {
-      const message = result.reason === 'cooldown'
+      const message = result.reason === 'cooldown' || result.reason === 'blocked'
         ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
         : result.reason === 'empty'
           ? 'Tu carrito está vacío.'
@@ -268,7 +279,9 @@ export default function CartScreen() {
                   {isSubmittingOrder
                     ? 'Generando pedido...'
                     : remainingMs > 0
-                    ? `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
+                    ? isCancellationBlocked
+                      ? `Bloqueado por ${formatRemainingTime(remainingMs)}`
+                      : `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
                     : 'Generar pedido'}
                 </Text>
               </Pressable>

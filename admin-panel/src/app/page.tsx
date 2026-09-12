@@ -25,9 +25,9 @@ export default async function HomePage() {
       order_items (id, product_id, product_name, quantity, unit_price, selections, notes),
       order_status_events (id, status, created_at)
     `)
+    .neq("status", "cancelled")
     .order("created_at", { ascending: false })
     .limit(100);
 
   return <Dashboard initialOrders={(orders ?? []) as unknown as BusinessOrder[]} staffName={staff.display_name} role={staff.role as StaffRole} />;
 }
-

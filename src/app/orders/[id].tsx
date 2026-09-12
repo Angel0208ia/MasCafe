@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
 import {
   ORDER_TIMELINE,
   getOrderProgressIndex,
@@ -25,6 +26,13 @@ import { useProductsStore } from '@/store/productsStore';
 import type { OrderStatus } from '@/types/product';
 
 const REFRESH_INTERVAL_MS = 15_000;
+
+type DialogState = {
+  title: string;
+  message: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  actions?: AppDialogAction[];
+};
 
 function formatOrderDate(timestamp: number): string {
   return new Date(timestamp).toLocaleString('es-MX', {
@@ -60,8 +68,12 @@ export default function OrderDetailScreen() {
   const { width } = useWindowDimensions();
   const orders = useProductsStore((state) => state.orders);
   const loadTrackedOrders = useProductsStore((state) => state.loadTrackedOrders);
+  const repeatOrder = useProductsStore((state) => state.repeatOrder);
+  const cancelOrder = useProductsStore((state) => state.cancelOrder);
+  const isCancellingOrder = useProductsStore((state) => state.isCancellingOrder);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
   const order = orders.find((item) => item.id === id);
   const horizontalPadding = getScreenPadding(width);
 
@@ -120,6 +132,50 @@ export default function OrderDetailScreen() {
   const timeline = getTimeline(order.status);
   const activeStep = order.status === 'cancelled' ? 1 : getOrderProgressIndex(order.status);
   const accent = statusColor(order.status);
+
+  const handleRepeatOrder = () => {
+    const result = repeatOrder(order.id);
+    if (!result.success) {
+      setDialog({
+        title: 'No se pudo repetir el pedido',
+        message: result.message ?? 'Revisa tu carrito e inténtalo nuevamente.',
+      });
+      return;
+    }
+    router.navigate('/cart');
+  };
+
+  const performCancellation = async () => {
+    const result = await cancelOrder(order.id);
+    if (!result.success) {
+      setDialog({
+        title: 'No se pudo cancelar',
+        message: result.message,
+        icon: 'alert-circle-outline',
+      });
+      return;
+    }
+
+    setDialog({
+      title: 'Pedido cancelado',
+      message: result.blockedUntil > Date.now()
+        ? 'Al ser una cancelación reiterada, no podrás generar pedidos durante 2 horas.'
+        : 'El pedido fue retirado de la fila. Si cancelas otro pedido, se bloquearán nuevos pedidos durante 2 horas.',
+      icon: 'checkmark-circle-outline',
+    });
+  };
+
+  const confirmCancellation = () => {
+    setDialog({
+      title: 'Cancelar pedido',
+      message: 'Solo puedes cancelar antes de que la cafetería comience a prepararlo. ¿Deseas continuar?',
+      icon: 'close-circle-outline',
+      actions: [
+        { label: 'Conservar pedido', variant: 'secondary' },
+        { label: 'Sí, cancelar', variant: 'danger', onPress: () => void performCancellation() },
+      ],
+    });
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={['left', 'right', 'bottom']}>
@@ -284,6 +340,35 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.orderActions}>
+          {order.status === 'received' && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.cancelButton,
+                (pressed || isCancellingOrder) && styles.repeatButtonPressed,
+              ]}
+              onPress={confirmCancellation}
+              disabled={isCancellingOrder}
+              accessibilityRole="button"
+              accessibilityLabel={`Cancelar pedido ${order.number}`}
+            >
+              <Ionicons name="close-circle-outline" size={20} color={colors.danger} />
+              <Text style={styles.cancelButtonText}>
+                {isCancellingOrder ? 'Cancelando…' : 'Cancelar pedido'}
+              </Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={({ pressed }) => [styles.repeatButton, pressed && styles.repeatButtonPressed]}
+            onPress={handleRepeatOrder}
+            accessibilityRole="button"
+            accessibilityLabel={`Volver a pedir los artículos del pedido ${order.number}`}
+          >
+            <Ionicons name="refresh" size={20} color={colors.onPrimary} />
+            <Text style={styles.repeatButtonText}>Pedir de nuevo</Text>
+          </Pressable>
+        </View>
+
         <View style={styles.pickupCard}>
           <Ionicons name="storefront-outline" size={22} color={colors.primary} />
           <View style={styles.pickupInfo}>
@@ -292,6 +377,14 @@ export default function OrderDetailScreen() {
           </View>
         </View>
       </ScrollView>
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        icon={dialog?.icon}
+        actions={dialog?.actions}
+        onClose={() => setDialog(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -435,6 +528,32 @@ const styles = StyleSheet.create({
   grandTotalRow: { marginTop: spacing.sm, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   grandTotalLabel: { fontSize: font.body, fontWeight: '800', color: colors.text },
   grandTotal: { fontSize: 22, fontWeight: '900', color: colors.primary },
+  orderActions: { gap: spacing.md },
+  cancelButton: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E7C2BE',
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+  },
+  cancelButtonText: { fontSize: font.body, fontWeight: '800', color: colors.danger },
+  repeatButton: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  repeatButtonPressed: { opacity: 0.75 },
+  repeatButtonText: { fontSize: font.body, fontWeight: '800', color: colors.onPrimary },
   pickupCard: {
     flexDirection: 'row',
     alignItems: 'center',

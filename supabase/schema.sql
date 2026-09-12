@@ -28,6 +28,14 @@ create table public.products (
 
 create sequence public.pickup_code_sequence start with 1000;
 
+create table public.anonymous_clients (
+  client_token uuid primary key default gen_random_uuid(),
+  cancellation_count integer not null default 0 check (cancellation_count >= 0),
+  blocked_until timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table public.orders (
   id uuid primary key default gen_random_uuid(),
   -- Es el número que muestra el estudiante al recoger el pedido.
@@ -35,6 +43,7 @@ create table public.orders (
   -- No identifica a una persona. Es una capacidad aleatoria privada para
   -- consultar el estado desde el teléfono que hizo el pedido.
   tracking_token uuid not null unique default gen_random_uuid(),
+  client_token uuid references public.anonymous_clients(client_token),
   status public.order_status not null default 'received',
   total numeric(10, 2) not null check (total >= 0),
   created_at timestamptz not null default now(),
@@ -54,6 +63,7 @@ create table public.order_items (
 
 create index orders_created_at_idx on public.orders (created_at desc);
 create index orders_status_created_at_idx on public.orders (status, created_at);
+create index orders_client_token_idx on public.orders (client_token);
 create index order_items_order_id_idx on public.order_items (order_id);
 
 -- Calcula el precio exclusivamente con el catálogo del servidor. Los nombres y
@@ -303,3 +313,138 @@ revoke all on public.orders, public.order_items from anon, authenticated;
 grant select on public.products to anon, authenticated;
 grant execute on function public.create_anonymous_order(jsonb) to anon, authenticated;
 grant execute on function public.get_anonymous_order(uuid) to anon, authenticated;
+
+create or replace function public.create_anonymous_order_with_client(
+  p_items jsonb,
+  p_client_token uuid default null
+)
+returns table (
+  order_id uuid,
+  pickup_code text,
+  tracking_token uuid,
+  status public.order_status,
+  total numeric,
+  anonymous_client_token uuid
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_client_token uuid := coalesce(p_client_token, gen_random_uuid());
+  v_blocked_until timestamptz;
+  v_created record;
+begin
+  insert into public.anonymous_clients (client_token)
+  values (v_client_token)
+  on conflict (client_token) do nothing;
+
+  select anonymous_clients.blocked_until
+  into v_blocked_until
+  from public.anonymous_clients
+  where anonymous_clients.client_token = v_client_token
+  for update;
+
+  if v_blocked_until is not null and v_blocked_until > now() then
+    raise exception 'No puedes generar pedidos hasta % por cancelaciones reiteradas',
+      to_char(v_blocked_until at time zone 'America/Cancun', 'DD/MM/YYYY HH24:MI');
+  end if;
+
+  select * into v_created from public.create_anonymous_order(p_items);
+
+  update public.orders
+  set client_token = v_client_token
+  where id = v_created.order_id;
+
+  return query select
+    v_created.order_id,
+    v_created.pickup_code,
+    v_created.tracking_token,
+    v_created.status,
+    v_created.total,
+    v_client_token;
+end;
+$$;
+
+create or replace function public.cancel_anonymous_order(
+  p_tracking_token uuid,
+  p_client_token uuid default null
+)
+returns table (
+  cancelled_order_id uuid,
+  cancelled_status public.order_status,
+  anonymous_client_token uuid,
+  total_cancellations integer,
+  ordering_blocked_until timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_order_id uuid;
+  v_status public.order_status;
+  v_order_client_token uuid;
+  v_client_token uuid;
+  v_cancellation_count integer;
+  v_blocked_until timestamptz;
+begin
+  select orders.id, orders.status, orders.client_token
+  into v_order_id, v_status, v_order_client_token
+  from public.orders
+  where orders.tracking_token = p_tracking_token
+  for update;
+
+  if not found then raise exception 'Pedido no encontrado'; end if;
+  if v_status = 'preparing' then
+    raise exception 'El pedido ya está en preparación y no se puede cancelar';
+  elsif v_status <> 'received' then
+    raise exception 'Este pedido ya no se puede cancelar';
+  end if;
+
+  if v_order_client_token is not null
+    and (p_client_token is null or p_client_token <> v_order_client_token) then
+    raise exception 'La autorización del cliente no corresponde a este pedido';
+  end if;
+
+  v_client_token := coalesce(v_order_client_token, p_client_token, gen_random_uuid());
+  insert into public.anonymous_clients (client_token)
+  values (v_client_token)
+  on conflict (client_token) do nothing;
+
+  select anonymous_clients.cancellation_count, anonymous_clients.blocked_until
+  into v_cancellation_count, v_blocked_until
+  from public.anonymous_clients
+  where anonymous_clients.client_token = v_client_token
+  for update;
+
+  v_cancellation_count := v_cancellation_count + 1;
+  if v_cancellation_count >= 2 then
+    v_blocked_until := now() + interval '2 hours';
+  end if;
+
+  update public.anonymous_clients
+  set cancellation_count = v_cancellation_count,
+      blocked_until = v_blocked_until,
+      updated_at = now()
+  where client_token = v_client_token;
+
+  update public.orders
+  set status = 'cancelled', client_token = v_client_token, updated_at = now()
+  where id = v_order_id;
+
+  return query select
+    v_order_id,
+    'cancelled'::public.order_status,
+    v_client_token,
+    v_cancellation_count,
+    v_blocked_until;
+end;
+$$;
+
+alter table public.anonymous_clients enable row level security;
+revoke all on public.anonymous_clients from anon, authenticated;
+revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public;
+revoke all on function public.cancel_anonymous_order(uuid, uuid) from public;
+grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon, authenticated;
+grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon, authenticated;

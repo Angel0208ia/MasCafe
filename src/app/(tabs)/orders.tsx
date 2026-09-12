@@ -3,6 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AppDialog from '@/components/AppDialog';
 import { getOrderStatusLabel } from '@/constants/orderStatus';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ORDER_COOLDOWN_MS, useProductsStore } from '@/store/productsStore';
@@ -10,9 +11,12 @@ import type { Order } from '@/types/product';
 
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  return hours > 0
+    ? `${hours}:${(minutes % 60).toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+    : `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function formatOrderDate(timestamp: number): string {
@@ -35,33 +39,43 @@ function getStatusTone(status: Order['status']): { background: string; foregroun
   return tones[status];
 }
 
-function OrderCard({ order, onPress }: { order: Order; onPress: (id: string) => void }) {
+function OrderCard({
+  order,
+  onOpen,
+  onRepeat,
+}: {
+  order: Order;
+  onOpen: (id: string) => void;
+  onRepeat: (id: string) => void;
+}) {
   const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
   const productSummary = order.items.map((item) => `${item.quantity} × ${item.name}`).join(' · ');
   const tone = getStatusTone(order.status);
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.orderCard, pressed && styles.orderCardPressed]}
-      onPress={() => onPress(order.id)}
-      accessibilityRole="button"
-      accessibilityLabel={`Abrir pedido ${order.number}, ${getOrderStatusLabel(order.status)}`}
-    >
-      <View style={styles.orderHeader}>
-        <View style={styles.orderIdentity}>
-          <Text style={styles.orderNumber}>{order.number}</Text>
-          <Text style={styles.orderDate}>{formatOrderDate(order.createdAt)}</Text>
+    <View style={styles.orderCard}>
+      <Pressable
+        style={({ pressed }) => pressed && styles.orderCardPressed}
+        onPress={() => onOpen(order.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Abrir pedido ${order.number}, ${getOrderStatusLabel(order.status)}`}
+      >
+        <View style={styles.orderHeader}>
+          <View style={styles.orderIdentity}>
+            <Text style={styles.orderNumber}>{order.number}</Text>
+            <Text style={styles.orderDate}>{formatOrderDate(order.createdAt)}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: tone.background }]}>
+            <View style={[styles.statusDot, { backgroundColor: tone.foreground }]} />
+            <Text style={[styles.statusText, { color: tone.foreground }]}>
+              {getOrderStatusLabel(order.status)}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: tone.background }]}>
-          <View style={[styles.statusDot, { backgroundColor: tone.foreground }]} />
-          <Text style={[styles.statusText, { color: tone.foreground }]}>
-            {getOrderStatusLabel(order.status)}
-          </Text>
-        </View>
-      </View>
 
-      <View style={styles.divider} />
-      <Text style={styles.productSummary} numberOfLines={2}>{productSummary}</Text>
+        <View style={styles.divider} />
+        <Text style={styles.productSummary} numberOfLines={2}>{productSummary}</Text>
+      </Pressable>
 
       <View style={styles.orderFooter}>
         <View>
@@ -70,12 +84,23 @@ function OrderCard({ order, onPress }: { order: Order; onPress: (id: string) => 
           </Text>
           <Text style={styles.total}>${order.total.toFixed(2)}</Text>
         </View>
-        <View style={styles.openOrder}>
-          <Text style={styles.openOrderText}>Ver seguimiento</Text>
-          <Ionicons name="chevron-forward" size={17} color={colors.primary} />
+        <View style={styles.orderActions}>
+          <Pressable
+            style={({ pressed }) => [styles.repeatButton, pressed && styles.actionPressed]}
+            onPress={() => onRepeat(order.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`Volver a pedir los artículos del pedido ${order.number}`}
+          >
+            <Ionicons name="refresh" size={16} color={colors.onPrimary} />
+            <Text style={styles.repeatButtonText}>Pedir de nuevo</Text>
+          </Pressable>
+          <Pressable style={styles.openOrder} onPress={() => onOpen(order.id)}>
+            <Text style={styles.openOrderText}>Ver detalle</Text>
+            <Ionicons name="chevron-forward" size={17} color={colors.primary} />
+          </Pressable>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -91,12 +116,30 @@ export default function OrdersScreen() {
   const { width } = useWindowDimensions();
   const orders = useProductsStore((state) => state.orders);
   const loadTrackedOrders = useProductsStore((state) => state.loadTrackedOrders);
+  const repeatOrder = useProductsStore((state) => state.repeatOrder);
+  const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
+  const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
   const [now, setNow] = useState(Date.now());
   const latestOrder = orders[0];
-  const remainingMs = latestOrder
+  const regularCooldownRemainingMs = latestOrder
     ? Math.max(0, latestOrder.createdAt + ORDER_COOLDOWN_MS - now)
     : 0;
+  const cancellationBlockRemainingMs = Math.max(0, orderingBlockedUntil - now);
+  const remainingMs = Math.max(regularCooldownRemainingMs, cancellationBlockRemainingMs);
+  const isCancellationBlocked = cancellationBlockRemainingMs > 0;
   const horizontalPadding = getScreenPadding(width);
+
+  const handleRepeatOrder = useCallback((orderId: string) => {
+    const result = repeatOrder(orderId);
+    if (!result.success) {
+      setDialog({
+        title: 'No se pudo repetir el pedido',
+        message: result.message ?? 'Revisa tu carrito e inténtalo nuevamente.',
+      });
+      return;
+    }
+    router.navigate('/cart');
+  }, [repeatOrder, router]);
 
   useFocusEffect(useCallback(() => {
     void loadTrackedOrders();
@@ -105,15 +148,19 @@ export default function OrdersScreen() {
   const latestOrderAt = latestOrder?.createdAt;
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
-    if (!latestOrderAt || Date.now() >= latestOrderAt + ORDER_COOLDOWN_MS) return;
+    const restrictionUntil = Math.max(
+      latestOrderAt ? latestOrderAt + ORDER_COOLDOWN_MS : 0,
+      orderingBlockedUntil
+    );
+    if (Date.now() >= restrictionUntil) return;
 
     const timer = setInterval(() => {
       const currentTime = Date.now();
       setNow(currentTime);
-      if (currentTime >= latestOrderAt + ORDER_COOLDOWN_MS) clearInterval(timer);
+      if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrderAt]));
+  }, [latestOrderAt, orderingBlockedUntil]));
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
@@ -140,11 +187,15 @@ export default function OrdersScreen() {
                 <View style={styles.cooldownContent}>
                   <Text style={styles.cooldownTitle}>
                     {remainingMs > 0
-                      ? `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
+                      ? isCancellationBlocked
+                        ? `Pedidos bloqueados por ${formatRemainingTime(remainingMs)}`
+                        : `Nuevo pedido en ${formatRemainingTime(remainingMs)}`
                       : 'Ya puedes realizar otro pedido'}
                   </Text>
                   <Text style={styles.cooldownText}>
-                    Por el momento solo se permite un pedido cada 30 minutos.
+                    {isCancellationBlocked
+                      ? 'Bloqueo temporal por cancelaciones reiteradas.'
+                      : 'Por el momento solo se permite un pedido cada 30 minutos.'}
                   </Text>
                 </View>
               </View>
@@ -154,7 +205,11 @@ export default function OrdersScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <OrderCard order={item} onPress={(id) => openOrderDetail(router, id)} />
+          <OrderCard
+            order={item}
+            onOpen={(id) => openOrderDetail(router, id)}
+            onRepeat={handleRepeatOrder}
+          />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -166,6 +221,14 @@ export default function OrdersScreen() {
             </Pressable>
           </View>
         }
+      />
+
+      <AppDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ''}
+        message={dialog?.message ?? ''}
+        icon="alert-circle-outline"
+        onClose={() => setDialog(null)}
       />
 
     </SafeAreaView>
@@ -240,11 +303,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.md,
     marginTop: spacing.md,
   },
   itemCount: { fontSize: font.small, color: colors.muted },
   total: { marginTop: 2, fontSize: font.body, fontWeight: '800', color: colors.primary },
-  openOrder: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  orderActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md },
+  repeatButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+  repeatButtonText: { fontSize: font.tiny, fontWeight: '800', color: colors.onPrimary },
+  actionPressed: { opacity: 0.72 },
+  openOrder: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: spacing.sm },
   openOrderText: { fontSize: font.small, fontWeight: '800', color: colors.primary },
   empty: { alignItems: 'center', marginTop: 90, paddingHorizontal: spacing.xl },
   emptyTitle: { marginTop: spacing.lg, fontSize: font.heading, fontWeight: '700', color: colors.text },

@@ -139,7 +139,7 @@ begin
 
   if not (
     (v_current_status = 'received' and p_status in ('preparing', 'cancelled'))
-    or (v_current_status = 'preparing' and p_status in ('ready', 'cancelled'))
+    or (v_current_status = 'preparing' and p_status = 'ready')
     or (v_current_status = 'ready' and p_status = 'delivered')
   ) then
     raise exception 'Cambio de estado no permitido: % -> %', v_current_status, p_status;
