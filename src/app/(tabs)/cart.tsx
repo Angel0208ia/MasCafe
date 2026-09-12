@@ -16,10 +16,10 @@ import { getCartPricing } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
   MAX_ITEMS_PER_ORDER,
-  ORDER_COOLDOWN_MS,
   useProductsStore,
 } from '@/store/productsStore';
 import type { CartItem } from '@/types/product';
+import { getOrderCooldownUntil } from '@/lib/orderCooldown';
 
 type DialogState = {
   title: string;
@@ -112,7 +112,7 @@ export default function CartScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const cart = useProductsStore((state) => state.cart);
-  const latestOrderAt = useProductsStore((state) => state.orders[0]?.createdAt ?? null);
+  const nextOrderAt = useProductsStore((state) => getOrderCooldownUntil(state.orders[0]));
   const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
   const clearCart = useProductsStore((state) => state.clearCart);
   const placeOrder = useProductsStore((state) => state.placeOrder);
@@ -121,9 +121,7 @@ export default function CartScreen() {
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const pricing = getCartPricing(cart, new Date(now));
-  const regularCooldownRemainingMs = latestOrderAt
-    ? Math.max(0, latestOrderAt + ORDER_COOLDOWN_MS - now)
-    : 0;
+  const regularCooldownRemainingMs = Math.max(0, nextOrderAt - now);
   const cancellationBlockRemainingMs = Math.max(0, orderingBlockedUntil - now);
   const remainingMs = Math.max(regularCooldownRemainingMs, cancellationBlockRemainingMs);
   const isCancellationBlocked = cancellationBlockRemainingMs > 0;
@@ -132,7 +130,7 @@ export default function CartScreen() {
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
     const restrictionUntil = Math.max(
-      latestOrderAt ? latestOrderAt + ORDER_COOLDOWN_MS : 0,
+      nextOrderAt,
       orderingBlockedUntil
     );
     if (Date.now() >= restrictionUntil) return;
@@ -143,7 +141,7 @@ export default function CartScreen() {
       if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrderAt, orderingBlockedUntil]));
+  }, [nextOrderAt, orderingBlockedUntil]));
 
   const submitOrder = async () => {
     const result = await placeOrder();

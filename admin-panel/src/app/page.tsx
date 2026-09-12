@@ -29,5 +29,5 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
-  return <Dashboard initialOrders={(orders ?? []) as unknown as BusinessOrder[]} staffName={staff.display_name} role={staff.role as StaffRole} />;
+  return <Dashboard initialOrders={(orders ?? []) as unknown as BusinessOrder[]} staffId={userId} staffName={staff.display_name} role={staff.role as StaffRole} />;
 }

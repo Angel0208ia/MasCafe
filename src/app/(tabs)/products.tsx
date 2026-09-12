@@ -40,6 +40,9 @@ export default function ProductsScreen() {
   // getCategories crea el arreglo a partir del menú remoto. Memorizarlo aquí
   // evita que Zustand reciba una referencia distinta en cada render.
   const categories = useMemo(() => getCategories(), [getCategories, products]);
+  const searchIndex = useMemo(() => new Map(products.map((product) => [
+    product.id, normalizeSearchText(`${product.name} ${product.description}`),
+  ])), [products]);
 
   const visibleProducts = useMemo(() => {
     const productsInCategory = filterByCategory(products, selectedCategory);
@@ -48,9 +51,9 @@ export default function ProductsScreen() {
     if (!normalizedQuery) return productsInCategory;
 
     return productsInCategory.filter((product) =>
-      normalizeSearchText(`${product.name} ${product.description}`).includes(normalizedQuery)
+      searchIndex.get(product.id)?.includes(normalizedQuery)
     );
-  }, [products, searchQuery, selectedCategory]);
+  }, [products, searchIndex, searchQuery, selectedCategory]);
 
   const currentCategory =
     categories.find((category) => category.value === selectedCategory)?.label ?? 'Todos';
@@ -89,6 +92,9 @@ export default function ProductsScreen() {
         style={styles.list}
         data={visibleProducts}
         numColumns={columns}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
         keyExtractor={(product) => product.id}
         contentContainerStyle={[
           styles.content,

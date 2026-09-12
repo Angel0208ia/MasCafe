@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeDollarSign, Bell, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, Settings, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
+import { BadgeDollarSign, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
 import { signOut } from "@/app/actions";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder, OrderStatus, StaffRole } from "@/lib/types";
+import { OrderHistory } from "./order-history";
+import { PanelControls } from "./panel-controls";
 import styles from "./dashboard.module.css";
 
-type Filter = "active" | OrderStatus | "all";
+type Filter = OrderStatus | "all";
 
 const STATUS: Record<OrderStatus, { label: string; short: string; tone: string }> = {
   received: { label: "Pedido recibido", short: "Recibido", tone: "received" },
@@ -19,7 +21,6 @@ const STATUS: Record<OrderStatus, { label: string; short: string; tone: string }
 };
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: "active", label: "En proceso" },
   { value: "received", label: "Recibidos" },
   { value: "preparing", label: "Preparando" },
   { value: "ready", label: "Listos" },
@@ -57,14 +58,31 @@ function nextActionLabel(status: OrderStatus) {
   return "Pedido finalizado";
 }
 
-export function Dashboard({ initialOrders, staffName, role }: { initialOrders: BusinessOrder[]; staffName: string; role: StaffRole }) {
+export function Dashboard({ initialOrders, staffId, staffName, role }: { initialOrders: BusinessOrder[]; staffId: string; staffName: string; role: StaffRole }) {
   const [orders, setOrders] = useState(initialOrders);
-  const [filter, setFilter] = useState<Filter>("active");
+  const [section, setSection] = useState<"operation" | "history">("operation");
+  const [filter, setFilter] = useState<Filter>("received");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(initialOrders[0]?.id ?? "");
   const [refreshing, setRefreshing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [notice, setNotice] = useState("");
+
+  const openNotifiedOrder = async (id: string) => {
+    setSection("operation");
+    try {
+      const { data, error } = await createClient().from("orders")
+        .select("id, pickup_code, status, total, created_at, updated_at, order_items (id, product_id, product_name, quantity, unit_price, selections, notes), order_status_events (id, status, created_at)")
+        .eq("id", id).neq("status", "cancelled").maybeSingle();
+      if (error || !data) {
+        setNotice("Este pedido ya no está disponible o fue cancelado.");
+        return;
+      }
+      const order = data as unknown as BusinessOrder;
+      setOrders((current) => [order, ...current.filter((item) => item.id !== id)]);
+      setFilter("all"); setQuery(""); setSelectedId(id); setNotice("");
+    } catch { setNotice("No se pudo abrir el pedido. Intenta nuevamente."); }
+  };
 
   const loadOrders = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
@@ -92,7 +110,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
   const visibleOrders = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("es-MX");
     return orders.filter((order) => {
-      const matchesFilter = filter === "all" || (filter === "active" && ["received", "preparing", "ready"].includes(order.status)) || order.status === filter;
+      const matchesFilter = filter === "all" || order.status === filter;
       const matchesQuery = !normalized || order.pickup_code.toLocaleLowerCase("es-MX").includes(normalized) || order.order_items.some((item) => item.product_name.toLocaleLowerCase("es-MX").includes(normalized));
       return matchesFilter && matchesQuery;
     });
@@ -206,8 +224,8 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
       <aside className={styles.sidebar}>
         <div className={styles.logoRow}><div className={styles.logo}><Image className={styles.logoImage} src="/logo-mas-cafe.png" alt="Logo de Más Café" width={40} height={40} priority /></div><div><strong>Más Café</strong><span>Panel de negocio</span></div></div>
         <nav className={styles.navigation} aria-label="Navegación principal">
-          <button className={styles.navActive}><LayoutDashboard size={19} />Operación</button>
-          <button disabled><ClipboardList size={19} />Pedidos</button>
+          <button className={section === "operation" ? styles.navActive : ""} aria-current={section === "operation" ? "page" : undefined} onClick={() => setSection("operation")}><LayoutDashboard size={19} />Operación</button>
+          <button className={section === "history" ? styles.navActive : ""} aria-current={section === "history" ? "page" : undefined} onClick={() => setSection("history")}><ClipboardList size={19} />Pedidos</button>
           <button disabled><Store size={19} />Menú <small>Pronto</small></button>
           <button disabled><Tag size={19} />Promociones <small>Pronto</small></button>
           {role === "admin" && <button disabled><Users size={19} />Personal <small>Pronto</small></button>}
@@ -216,8 +234,9 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
       </aside>
 
       <main className={styles.main}>
-        <header className={styles.topbar}><div><p>{displayDate}</p><h1>Operación de hoy</h1></div><div className={styles.topActions}><span className={styles.live}><i />En vivo</span><button aria-label="Notificaciones"><Bell size={19} /></button><button aria-label="Configuración"><Settings size={19} /></button></div></header>
+        <header className={styles.topbar}><div><p>{displayDate}</p><h1>{section === "operation" ? "Operación de hoy" : "Historial de pedidos"}</h1></div><div className={styles.topActions}><span className={styles.live}><i />En vivo</span><PanelControls orders={orders} staffId={staffId} onOpenOrder={(id) => { void openNotifiedOrder(id); }} /></div></header>
 
+        {section === "history" ? <OrderHistory revision={orders} /> : <>
         <section className={styles.metrics} aria-label="Resumen del día">
           <article><span className={styles.metricIconReceived}><ShoppingBag size={20} /></span><div><p>Recibidos</p><strong>{metrics.received}</strong></div></article>
           <article><span className={styles.metricIconPreparing}><CookingPot size={20} /></span><div><p>Preparando</p><strong>{metrics.preparing}</strong></div></article>
@@ -240,6 +259,7 @@ export function Dashboard({ initialOrders, staffName, role }: { initialOrders: B
 
           <div className={styles.detailPanel}>{selected ? <OrderDetail order={selected} updating={updating} onUpdate={updateStatus} /> : <div className={styles.noSelection}><ClipboardList size={34} /><strong>Selecciona un pedido</strong><span>Aquí verás sus productos, notas y seguimiento.</span></div>}</div>
         </section>
+        </>}
       </main>
     </div>
   );

@@ -1,0 +1,74 @@
+.history { margin-top: 26px; }
+.toolbar, .controls, .registryHeader, .filters, .tabs, .pagination { display: flex; align-items: center; gap: 12px; }
+.toolbar, .registryHeader { justify-content: space-between; flex-wrap: wrap; }
+.toolbar h2, .registry h2 { margin: 0; font-size: 1.1rem; letter-spacing: -.025em; }
+.toolbar p, .registryHeader p { margin: 5px 0 0; color: var(--muted); font-size: .8rem; }
+.controls label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: white; }
+.controls input { min-width: 0; border: 0; color: var(--coffee-900); background: transparent; }
+.controls button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 12px; background: white; color: var(--coffee-900); cursor: pointer; }
+.note { margin: 16px 0; font-size: .76rem; line-height: 1.6; color: var(--muted); }
+.reports { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.report { min-width: 0; padding: 21px; border: 1px solid var(--border); border-radius: 20px; background: var(--cream-50); box-shadow: var(--shadow-soft); }
+.reportHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.reportHeading > span { font-size: .78rem; font-weight: 800; color: var(--coffee-700); background: var(--cream-200); border-radius: 999px; padding: 5px 11px; }
+.reportHeading small { color: var(--muted); font-size: .73rem; }
+.numbers { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 15px; margin-top: 22px; }
+.numbers > div:last-child { text-align: right; }
+.numbers span { display: block; color: var(--muted); font-size: .75rem; }
+.numbers strong { display: block; margin-top: 4px; font-size: clamp(1.15rem, 1.7vw, 1.7rem); color: var(--coffee-900); overflow-wrap: anywhere; letter-spacing: -.04em; }
+.delivered { font-size: .72rem; color: var(--muted); margin: 10px 0 19px; }
+.report h3 { display: flex; align-items: center; gap: 8px; margin: 0; padding-top: 17px; border-top: 1px solid var(--border); font-size: .8rem; color: var(--coffee-700); }
+.ranking { display: grid; gap: 12px; list-style: none; padding: 0; margin: 16px 0 0; }
+.ranking li { display: flex; align-items: center; gap: 9px; font-size: .77rem; }
+.ranking li > b { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; background: var(--cream-200); border-radius: 8px; color: var(--coffee-700); }
+.ranking li > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ranking strong { white-space: nowrap; color: var(--muted); font-size: .72rem; }
+.emptyTop { color: var(--muted); font-size: .76rem; line-height: 1.6; margin: 17px 0 0; }
+.registry { margin-top: 24px; padding: 23px; border: 1px solid var(--border); border-radius: 22px; background: white; }
+.tabs { padding: 4px; gap: 3px; background: var(--cream-100); border-radius: 12px; }
+.tabs button, .pagination button { padding: 9px 13px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-size: .77rem; font-weight: 700; }
+.tabs .active { color: white; background: var(--coffee-900); }
+.filters { margin: 20px 0 15px; flex-wrap: wrap; }
+.search { display: flex; align-items: center; gap: 9px; flex: 1; min-width: 170px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; color: var(--muted); }
+.search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; font-size: .83rem; }
+.search:focus-within { outline: 2px solid var(--cream-300); }
+.filters select { max-width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 12px; font: inherit; font-size: .8rem; color: var(--coffee-900); background: var(--cream-50); }
+.order { border-top: 1px solid var(--border); }
+.order summary { display: grid; grid-template-columns: minmax(0, 1fr) auto auto 18px; align-items: center; gap: 18px; padding: 17px 2px; cursor: pointer; list-style: none; }
+.order summary::-webkit-details-marker { display: none; }
+.order summary > div { min-width: 0; }
+.order summary strong { display: block; font-size: .87rem; overflow-wrap: anywhere; }
+.order summary > div span { display: block; margin-top: 5px; font-size: .73rem; color: var(--muted); }
+.order summary > b { font-size: .88rem; white-space: nowrap; color: var(--coffee-900); }
+.order[open] summary > svg { transform: rotate(180deg); }
+.status { padding: 6px 10px; border-radius: 999px; background: var(--cream-200); color: var(--coffee-700); font-size: .7rem; font-weight: 750; }
+.items { padding: 16px; margin-bottom: 16px; border-radius: 13px; background: var(--cream-100); }
+.items > div { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; font-size: .8rem; }
+.items > div > div { min-width: 0; overflow-wrap: anywhere; }
+.items p, .items small { margin: 4px 0; font-size: .75rem; color: var(--muted); }
+.items b { white-space: nowrap; }
+.items > p { border-top: 1px solid var(--border); padding-top: 12px; }
+.pagination { justify-content: flex-end; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--border); }
+.pagination span { font-size: .74rem; color: var(--muted); }
+.pagination button { border: 1px solid var(--border); }
+.pagination button:disabled, .controls button:disabled { opacity: .45; cursor: default; }
+.empty { padding: 25px 10px; text-align: center; font-size: .85rem; color: var(--muted); }
+.error { padding: 13px; border-radius: 12px; color: var(--red); background: var(--red-soft); font-size: .83rem; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+:global([data-theme="dark"]) .registry,
+:global([data-theme="dark"]) .controls label,
+:global([data-theme="dark"]) .controls button { background: var(--surface); }
+:global([data-theme="dark"]) .tabs .active { background: var(--action-bg); color: var(--action-text); }
+@container dashboard (max-width: 850px) { .reports { grid-template-columns: 1fr; } .numbers strong { font-size: 1.7rem; } }
+@media (max-width: 600px) {
+  .registry, .report { padding: 17px; }
+  .registryHeader { align-items: stretch; }
+  .tabs { width: 100%; }
+  .tabs button { flex: 1; }
+  .order summary { grid-template-columns: minmax(0, 1fr) auto 18px; gap: 9px; }
+  .order summary > div { grid-column: 1 / -1; }
+  .order summary > b { text-align: right; }
+  .filters select { width: 100%; }
+}

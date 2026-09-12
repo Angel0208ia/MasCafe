@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog from '@/components/AppDialog';
 import { getOrderStatusLabel } from '@/constants/orderStatus';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
-import { ORDER_COOLDOWN_MS, useProductsStore } from '@/store/productsStore';
+import { useProductsStore } from '@/store/productsStore';
+import { getOrderCooldownUntil } from '@/lib/orderCooldown';
 import type { Order } from '@/types/product';
 
 function formatRemainingTime(milliseconds: number): string {
@@ -121,9 +122,8 @@ export default function OrdersScreen() {
   const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
   const [now, setNow] = useState(Date.now());
   const latestOrder = orders[0];
-  const regularCooldownRemainingMs = latestOrder
-    ? Math.max(0, latestOrder.createdAt + ORDER_COOLDOWN_MS - now)
-    : 0;
+  const nextOrderAt = getOrderCooldownUntil(latestOrder);
+  const regularCooldownRemainingMs = Math.max(0, nextOrderAt - now);
   const cancellationBlockRemainingMs = Math.max(0, orderingBlockedUntil - now);
   const remainingMs = Math.max(regularCooldownRemainingMs, cancellationBlockRemainingMs);
   const isCancellationBlocked = cancellationBlockRemainingMs > 0;
@@ -145,11 +145,10 @@ export default function OrdersScreen() {
     void loadTrackedOrders();
   }, [loadTrackedOrders]));
 
-  const latestOrderAt = latestOrder?.createdAt;
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
     const restrictionUntil = Math.max(
-      latestOrderAt ? latestOrderAt + ORDER_COOLDOWN_MS : 0,
+      nextOrderAt,
       orderingBlockedUntil
     );
     if (Date.now() >= restrictionUntil) return;
@@ -160,7 +159,7 @@ export default function OrdersScreen() {
       if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [latestOrderAt, orderingBlockedUntil]));
+  }, [nextOrderAt, orderingBlockedUntil]));
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>

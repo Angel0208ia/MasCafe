@@ -20,13 +20,15 @@ import {
 import { calculateUnitPrice, createDefaultSelections } from '../lib/productCustomizations';
 import { getCartPricing, getPromotionById, isPromotionActive } from '../constants/promotions';
 import { getProductImage } from '../constants/productImages';
+import { getOrderCooldownUntil } from '../lib/orderCooldown';
+export { ORDER_COOLDOWN_MS } from '../lib/orderCooldown';
 
 export type { CartItem, Product } from '../types/product';
 
 export const ALL_CATEGORIES = 'Todos';
 export const MAX_ITEMS_PER_ORDER = 3;
-export const ORDER_COOLDOWN_MS = 30 * 60 * 1000;
 export const CANCELLATION_BLOCK_MS = 2 * 60 * 60 * 1000;
+const MENU_CACHE_MS = 60_000;
 
 export type CategoryOption = {
   label: string;
@@ -110,6 +112,8 @@ type ProductsState = {
   orderingBlockedUntil: number;
   isSubmittingOrder: boolean;
   isCancellingOrder: boolean;
+  isLoadingMenu: boolean;
+  lastMenuLoadedAt: number;
   setCategory: (category: string) => void;
   addToCart: (item: NewCartItem) => CartActionResult;
   addPromotionToCart: (promotionId: string) => CartActionResult;
@@ -136,6 +140,8 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   orderingBlockedUntil: getOrderingBlockedUntil(),
   isSubmittingOrder: false,
   isCancellingOrder: false,
+  isLoadingMenu: false,
+  lastMenuLoadedAt: 0,
 
   setCategory: (category) => set({ selectedCategory: category }),
 
@@ -359,10 +365,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       };
     }
 
-    const latestOrder = state.orders[0];
-    const nextOrderAt = latestOrder
-      ? latestOrder.createdAt + ORDER_COOLDOWN_MS
-      : 0;
+    const nextOrderAt = getOrderCooldownUntil(state.orders[0]);
 
     if (now < nextOrderAt) {
       return {
@@ -435,15 +438,21 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   },
 
   loadMenu: async () => {
+    const current = get();
+    if (current.isLoadingMenu || Date.now() - current.lastMenuLoadedAt < MENU_CACHE_MS) return;
+    set({ isLoadingMenu: true });
     try {
       const products = await fetchMenu();
       if (products.length > 0) {
         set((state) => ({
           products: preserveUnchangedProducts(state.products, products),
+          lastMenuLoadedAt: Date.now(),
         }));
       }
     } catch {
       // El catálogo incluido permite seguir explorando si aún no hay conexión.
+    } finally {
+      set({ isLoadingMenu: false });
     }
   },
 

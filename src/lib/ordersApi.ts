@@ -1,5 +1,6 @@
 import type { CancelOrderResult, CartItem, Order, OrderStatus, SelectedCustomization } from '../types/product';
 import { supabase } from './supabase';
+import { readStorageItem } from './storageAccess';
 
 const TRACKING_TOKENS_KEY = 'mascafe-tracking-tokens';
 const TRACKED_ORDERS_KEY = 'mascafe-tracked-orders';
@@ -45,7 +46,7 @@ type RemoteOrder = {
 
 function getTrackingTokens(): string[] {
   try {
-    const stored = localStorage.getItem(TRACKING_TOKENS_KEY);
+    const stored = readStorageItem(TRACKING_TOKENS_KEY);
     const tokens: unknown = stored ? JSON.parse(stored) : [];
     return Array.isArray(tokens)
       ? tokens.filter((token): token is string => typeof token === 'string')
@@ -62,7 +63,7 @@ function saveTrackingToken(token: string): void {
 
 function getTrackedOrderTokens(): Record<string, string> {
   try {
-    const stored = localStorage.getItem(TRACKED_ORDERS_KEY);
+    const stored = readStorageItem(TRACKED_ORDERS_KEY);
     const value: unknown = stored ? JSON.parse(stored) : {};
     return typeof value === 'object' && value !== null
       ? value as Record<string, string>
@@ -81,7 +82,7 @@ function saveTrackedOrderToken(orderId: string, trackingToken: string): void {
 }
 
 function getClientToken(): string | null {
-  return localStorage.getItem(CLIENT_TOKEN_KEY);
+  return readStorageItem(CLIENT_TOKEN_KEY);
 }
 
 function saveClientToken(token: string): void {
@@ -97,7 +98,7 @@ function saveOrderingBlockedUntil(timestamp: number): void {
 }
 
 export function getOrderingBlockedUntil(): number {
-  const timestamp = Number(localStorage.getItem(ORDERING_BLOCKED_UNTIL_KEY) ?? 0);
+  const timestamp = Number(readStorageItem(ORDERING_BLOCKED_UNTIL_KEY) ?? 0);
   return Number.isFinite(timestamp) && timestamp > Date.now() ? timestamp : 0;
 }
 

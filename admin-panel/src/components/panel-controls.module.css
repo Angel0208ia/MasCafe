@@ -1,0 +1,33 @@
+.buttons { display: flex; gap: 8px; }
+.buttons > button { position: relative; display: grid; width: 42px; height: 42px; place-items: center; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.badge { position: absolute; top: -5px; right: -5px; display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 999px; background: var(--red); color: white; font-size: .64rem; font-weight: 800; }
+.dialog { width: min(540px, calc(100vw - 28px)); max-height: min(85vh, 850px); padding: 0; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.dialog::backdrop { background: rgba(15, 9, 6, .6); }
+.content { padding: 24px; }
+.content header { display: flex; gap: 15px; justify-content: space-between; align-items: flex-start; }
+.content h2 { font-size: 1.3rem; margin: 0; }
+.content header p { font-size: .78rem; color: var(--muted); margin: 7px 0 0; }
+.content header button { display: grid; place-items: center; flex-shrink: 0; border: 0; padding: 7px; border-radius: 9px; background: var(--cream-200); color: var(--ink); cursor: pointer; }
+.section { padding-top: 22px; margin-top: 20px; border-top: 1px solid var(--border); }
+.section h3 { font-size: .9rem; margin: 0 0 15px; }
+.themes { display: flex; gap: 8px; }
+.themes button { flex: 1; border: 1px solid var(--border); border-radius: 11px; padding: 12px 7px; font-size: .8rem; color: var(--ink); background: var(--cream-100); cursor: pointer; }
+.themes button[aria-pressed="true"] { color: var(--action-text); background: var(--action-bg); border-color: var(--action-bg); }
+.toggle { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 12px 0; font-size: .85rem; cursor: pointer; }
+.toggle input { width: 19px; height: 19px; accent-color: var(--orange); }
+.delay { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: .8rem; }
+.delay select { padding: 10px; border: 1px solid var(--border); border-radius: 9px; color: var(--ink); background: var(--cream-100); font: inherit; }
+.testSound, .notificationActions button, .alerts button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; color: var(--ink); background: var(--cream-100); cursor: pointer; font-size: .76rem; }
+.testSound { margin-top: 17px; }
+.hint { color: var(--muted); font-size: .73rem; line-height: 1.6; }
+.notificationActions { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 20px 0; font-size: .76rem; color: var(--muted); }
+.notificationActions button:disabled { opacity: .5; cursor: default; }
+.alerts { display: grid; gap: 10px; }
+.alerts article { border: 1px solid var(--border); border-radius: 13px; padding: 15px; background: var(--cream-100); }
+.alerts .unread { border-left: 4px solid var(--orange); }
+.alerts strong { font-size: .86rem; }
+.alerts p { color: var(--muted); font-size: .8rem; line-height: 1.5; margin: 7px 0; }
+.alerts small { color: var(--muted); font-size: .7rem; }
+.alerts button { display: flex; margin-top: 10px; }
+.empty { padding: 25px 0; color: var(--muted); text-align: center; font-size: .85rem; }
+@media (max-width: 430px) { .content { padding: 18px; } .buttons > button { width: 35px; height: 35px; } }

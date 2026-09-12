@@ -1,47 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { Eye, EyeOff, LoaderCircle, LockKeyhole, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { signIn } from "../actions";
 import styles from "./login.module.css";
 
 export function LoginForm() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [state, formAction, loading] = useActionState(signIn, { error: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    setError("");
-
-    const supabase = createClient();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (authError) {
-      setError("El correo o la contraseña no son correctos.");
-      setLoading(false);
-      return;
-    }
-
-    router.replace("/");
-    router.refresh();
-  }
 
   return (
-    <form className={styles.form} onSubmit={submit}>
+    <form className={styles.form} action={formAction}>
+      <div hidden aria-hidden="true">
+        <input name="website" tabIndex={-1} autoComplete="off" />
+      </div>
       <label className={styles.field}>
         <span>Correo del personal</span>
         <span className={styles.inputShell}>
           <Mail aria-hidden="true" size={19} />
           <input
             type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            name="email"
+            maxLength={254}
+            autoCapitalize="none"
+            spellCheck={false}
             placeholder="nombre@mascafe.mx"
             autoComplete="email"
             required
@@ -55,8 +37,8 @@ export function LoginForm() {
           <LockKeyhole aria-hidden="true" size={19} />
           <input
             type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            name="password"
+            maxLength={256}
             placeholder="Tu contraseña"
             autoComplete="current-password"
             required
@@ -72,7 +54,7 @@ export function LoginForm() {
         </span>
       </label>
 
-      {error && <p className={styles.error} role="alert">{error}</p>}
+      {state.error && <p className={styles.error} role="alert">{state.error}</p>}
 
       <button className={styles.submit} type="submit" disabled={loading}>
         {loading ? <LoaderCircle className={styles.spinner} size={19} /> : null}
@@ -81,4 +63,3 @@ export function LoginForm() {
     </form>
   );
 }
-
