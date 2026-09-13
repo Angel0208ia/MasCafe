@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
+import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import {
   ORDER_TIMELINE,
   getOrderProgressIndex,
@@ -25,7 +26,7 @@ import { colors, font, getScreenPadding, layout, radius, spacing } from '@/const
 import { useProductsStore } from '@/store/productsStore';
 import type { OrderStatus } from '@/types/product';
 
-const REFRESH_INTERVAL_MS = 15_000;
+const REFRESH_INTERVAL_MS = 5_000;
 
 type DialogState = {
   title: string;
@@ -75,6 +76,7 @@ export default function OrderDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const order = orders.find((item) => item.id === id);
+  useForegroundRefresh(loadTrackedOrders, REFRESH_INTERVAL_MS);
   const horizontalPadding = getScreenPadding(width);
 
   useFocusEffect(useCallback(() => {
@@ -86,11 +88,9 @@ export default function OrderDetailScreen() {
     };
 
     void updateOrders();
-    const interval = setInterval(() => void loadTrackedOrders(), REFRESH_INTERVAL_MS);
 
     return () => {
       mounted = false;
-      clearInterval(interval);
     };
   }, [loadTrackedOrders]));
 

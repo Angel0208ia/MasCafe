@@ -1,5 +1,5 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import CategoryFilter from '@/components/CategoryFilter';
 import ProductCard from '@/components/ProductCard';
+import AppDialog from '@/components/AppDialog';
+import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { filterByCategory, useProductsStore } from '@/store/productsStore';
 import type { Product } from '@/types/product';
@@ -36,6 +38,7 @@ export default function ProductsScreen() {
   const loadMenu = useProductsStore((state) => state.loadMenu);
   const getCategories = useProductsStore((state) => state.getCategories);
   const [searchQuery, setSearchQuery] = useState('');
+  const [unavailableName, setUnavailableName] = useState('');
 
   // getCategories crea el arreglo a partir del menú remoto. Memorizarlo aquí
   // evita que Zustand reciba una referencia distinta en cada render.
@@ -70,7 +73,11 @@ export default function ProductsScreen() {
   );
 
   const openProduct = useCallback(
-    (id: string) => router.push(`/products/${id}`),
+    (id: string) => {
+      const product = useProductsStore.getState().products.find(p => p.id === id);
+      if (!product?.available) { setUnavailableName(product?.name ?? 'Este artículo'); return; }
+      router.push(`/products/${id}`);
+    },
     [router]
   );
 
@@ -81,12 +88,11 @@ export default function ProductsScreen() {
     [cardStyle, openProduct]
   );
 
-  useFocusEffect(useCallback(() => {
-    void loadMenu();
-  }, [loadMenu]));
+  useForegroundRefresh(useCallback(() => loadMenu(true), [loadMenu]), 3000);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+      <AppDialog visible={!!unavailableName} title="Artículo no disponible" message={`${unavailableName} no está disponible por el momento.`} icon="information-circle-outline" onClose={() => setUnavailableName('')} />
       <FlatList
         key={`products-${columns}`}
         style={styles.list}

@@ -6,6 +6,8 @@ const TRACKING_TOKENS_KEY = 'mascafe-tracking-tokens';
 const TRACKED_ORDERS_KEY = 'mascafe-tracked-orders';
 const CLIENT_TOKEN_KEY = 'mascafe-client-token';
 const ORDERING_BLOCKED_UNTIL_KEY = 'mascafe-ordering-blocked-until';
+// Los estados finales no pueden cambiar según las transiciones del servidor.
+const completedOrders = new Map<string, Order>();
 
 type CreatedOrderRow = {
   order_id: string;
@@ -162,12 +164,16 @@ export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
 export async function fetchTrackedOrders(): Promise<Order[]> {
   const responses = await Promise.all(
     getTrackingTokens().map(async (token) => {
+      const completed = completedOrders.get(token);
+      if (completed) return completed;
       const { data, error } = await supabase.rpc('get_anonymous_order', {
         p_tracking_token: token,
       });
-      if (error || !data) return null;
+      if (error) throw error; // No borrar pedidos visibles por un fallo temporal.
+      if (!data) return null;
       const order = toOrder(data as RemoteOrder);
-      saveTrackedOrderToken(order.id, token);
+      if (getTrackedOrderTokens()[order.id] !== token) saveTrackedOrderToken(order.id, token);
+      if (order.status === 'delivered' || order.status === 'cancelled') completedOrders.set(token, order);
       return order;
     })
   );

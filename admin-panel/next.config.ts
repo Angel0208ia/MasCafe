@@ -13,7 +13,7 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${development ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src 'self' data: blob: ${supabaseOrigin} https://loremflickr.com`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabaseOrigin} ${supabaseOrigin.replace(/^http/, "ws")}${development ? " ws://localhost:* ws://127.0.0.1:*" : ""}`,
   "object-src 'none'",
@@ -23,6 +23,7 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  experimental: { serverActions: { bodySizeLimit: "3mb" } },
   turbopack: { root: process.cwd() },
   env: {
     NEXT_PUBLIC_SUPABASE_URL:

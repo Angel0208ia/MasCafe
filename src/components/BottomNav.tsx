@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { useEffect, useRef } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';

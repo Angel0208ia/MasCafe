@@ -11,6 +11,7 @@ import type {
   SelectedCustomization,
 } from '../types/product';
 import { fetchMenu } from '../lib/menuApi';
+import { singleFlight } from '../lib/singleFlight';
 import {
   cancelAnonymousOrder,
   createAnonymousOrder,
@@ -18,7 +19,8 @@ import {
   getOrderingBlockedUntil,
 } from '../lib/ordersApi';
 import { calculateUnitPrice, createDefaultSelections } from '../lib/productCustomizations';
-import { getCartPricing, getPromotionById, isPromotionActive } from '../constants/promotions';
+import { PROMOTIONS, getCartPricing, getPromotionById, isPromotionActive, type Promotion } from '../constants/promotions';
+import { refreshPromotions } from '../lib/promotionsApi';
 import { getProductImage } from '../constants/productImages';
 import { getOrderCooldownUntil } from '../lib/orderCooldown';
 export { ORDER_COOLDOWN_MS } from '../lib/orderCooldown';
@@ -29,6 +31,8 @@ export const ALL_CATEGORIES = 'Todos';
 export const MAX_ITEMS_PER_ORDER = 3;
 export const CANCELLATION_BLOCK_MS = 2 * 60 * 60 * 1000;
 const MENU_CACHE_MS = 60_000;
+let previousMenuResponse: Product[] | undefined;
+let localOrdersRevision = 0;
 
 export type CategoryOption = {
   label: string;
@@ -105,6 +109,7 @@ function preserveUnchangedProducts(current: Product[], incoming: Product[]): Pro
 }
 
 type ProductsState = {
+  promotions: readonly Promotion[];
   products: Product[];
   selectedCategory: string;
   cart: CartItem[];
@@ -125,7 +130,7 @@ type ProductsState = {
   clearCart: () => void;
   placeOrder: () => Promise<PlaceOrderResult>;
   cancelOrder: (orderId: string) => Promise<CancelOrderResult>;
-  loadMenu: () => Promise<void>;
+  loadMenu: (force?: boolean) => Promise<void>;
   loadTrackedOrders: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   getFilteredProducts: () => Product[];
@@ -133,6 +138,7 @@ type ProductsState = {
 };
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
+  promotions: PROMOTIONS,
   products: initialProducts,
   selectedCategory: ALL_CATEGORIES,
   cart: [],
@@ -146,6 +152,9 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   setCategory: (category) => set({ selectedCategory: category }),
 
   addToCart: (item) => {
+    if (!get().products.find(product => product.id === item.productId)?.available) {
+      return { success: false, message: 'Artículo no disponible por el momento.' };
+    }
     const cartQuantity = getCartQuantity(get().cart);
 
     if (cartQuantity + item.quantity > MAX_ITEMS_PER_ORDER) {
@@ -379,6 +388,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
     try {
       const order = await createAnonymousOrder(state.cart);
+      localOrdersRevision++;
       set((current) => ({
         orders: [order, ...current.orders.filter((item) => item.id !== order.id)],
         cart: [],
@@ -417,6 +427,8 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       const result = await cancelAnonymousOrder(orderId);
       if (!result.success) return result;
 
+      localOrdersRevision++;
+
       const cancelledAt = Date.now();
       set((current) => ({
         orderingBlockedUntil: result.blockedUntil,
@@ -437,18 +449,20 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  loadMenu: async () => {
+  loadMenu: async (force = false) => {
     const current = get();
-    if (current.isLoadingMenu || Date.now() - current.lastMenuLoadedAt < MENU_CACHE_MS) return;
+    if (current.isLoadingMenu || (!force && Date.now() - current.lastMenuLoadedAt < MENU_CACHE_MS)) return;
     set({ isLoadingMenu: true });
     try {
       const products = await fetchMenu();
-      if (products.length > 0) {
-        set((state) => ({
-          products: preserveUnchangedProducts(state.products, products),
-          lastMenuLoadedAt: Date.now(),
-        }));
-      }
+      const promotions = await refreshPromotions(products);
+      const unchanged = products === previousMenuResponse;
+      previousMenuResponse = products;
+      set((state) => ({
+        products: unchanged ? state.products : preserveUnchangedProducts(state.products, products),
+        promotions,
+        lastMenuLoadedAt: Date.now(),
+      }));
     } catch {
       // El catálogo incluido permite seguir explorando si aún no hay conexión.
     } finally {
@@ -456,14 +470,17 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     }
   },
 
-  loadTrackedOrders: async () => {
+  loadTrackedOrders: singleFlight(async () => {
     try {
+      const revision = localOrdersRevision;
       const orders = await fetchTrackedOrders();
-      set({ orders });
+      // Una respuesta anterior no debe sobrescribir un pedido recién creado/cancelado.
+      if (revision !== localOrdersRevision) return;
+      set(state => ({ orders: JSON.stringify(state.orders) === JSON.stringify(orders) ? state.orders : orders }));
     } catch {
       // No se borra el estado visible si la red falla temporalmente.
     }
-  },
+  }),
 
   getProductById: (id) => get().products.find((product) => product.id === id),
 

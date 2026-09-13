@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { memo } from 'react';
 import {
   Pressable,
@@ -25,11 +25,10 @@ function ProductCard({ product, onPress, style }: ProductCardProps) {
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed, !product.available && styles.unavailable]}
       onPress={() => onPress(product.id)}
-      disabled={!product.available}
       accessibilityRole="button"
-      accessibilityLabel={`Personalizar ${product.name}`}
+      accessibilityLabel={product.available ? `Personalizar ${product.name}` : `${product.name}, artículo no disponible`}
     >
       <ProductImage uri={product.image} name={product.name} style={styles.image} />
 
@@ -76,6 +75,7 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.82,
   },
+  unavailable: { opacity: 0.45 },
   image: {
     width: 82,
     height: 82,

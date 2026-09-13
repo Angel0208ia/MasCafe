@@ -18,6 +18,10 @@
     "expo-env.d.ts"
   ],
   "exclude": [
-    "admin-panel"
+    "admin-panel",
+    "MasCafe",
+    "work",
+    "dist",
+    "web-build"
   ]
 }

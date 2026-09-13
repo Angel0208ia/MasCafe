@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog from '@/components/AppDialog';
+import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import ProductImage from '@/components/ProductImage';
-import { PROMOTIONS, isPromotionActive } from '@/constants/promotions';
+import { getCancunWeekday, isPromotionActive } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ALL_CATEGORIES, useProductsStore } from '@/store/productsStore';
 
@@ -23,9 +24,21 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const setCategory = useProductsStore((state) => state.setCategory);
   const products = useProductsStore((state) => state.products);
+  const promotions = useProductsStore((state) => state.promotions);
+  const loadMenu = useProductsStore((state) => state.loadMenu);
   const addPromotionToCart = useProductsStore((state) => state.addPromotionToCart);
   const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
   const [today, setToday] = useState(() => new Date());
+  useForegroundRefresh(useCallback(() => {
+    const now = new Date();
+    setToday(previous => getCancunWeekday(previous) === getCancunWeekday(now) ? previous : now);
+    return loadMenu(true);
+  }, [loadMenu]), 3000);
+  const todaysPromotions = promotions.filter(promotion =>
+    isPromotionActive(promotion, today) && promotion.requirements.every(requirement =>
+      products.some(product => product.id === requirement.productId && product.available)
+    )
+  );
   const cartCount = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
   );
@@ -117,10 +130,20 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Promociones destacadas</Text>
+        <Text style={styles.sectionTitle}>Promociones de hoy</Text>
+
+        {todaysPromotions.length === 0 && (
+          <View style={styles.noPromotions}>
+            <Ionicons name="calendar-outline" size={28} color={colors.primary} />
+            <Text style={styles.noPromotionsTitle}>¡Lo bueno también se hace esperar!</Text>
+            <Text style={styles.noPromotionsText}>
+              Hoy no tenemos promociones. Vuelve otro día y descubre nuevas ofertas para tus antojos.
+            </Text>
+          </View>
+        )}
 
         <View style={[styles.promotions, isDesktop && styles.promotionsDesktop]}>
-          {PROMOTIONS.map((promotion) => {
+          {todaysPromotions.map((promotion) => {
             const active = isPromotionActive(promotion, today);
             const featuredProducts = promotion.requirements.flatMap((requirement) =>
               Array.from({ length: requirement.quantity }, (_, index) => ({
@@ -395,6 +418,29 @@ const styles = StyleSheet.create({
     fontSize: font.heading,
     fontWeight: '800',
     color: colors.text,
+  },
+  noPromotions: {
+    width: '100%',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.xl,
+    backgroundColor: colors.thumb,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+  },
+  noPromotionsTitle: {
+    color: colors.primary,
+    fontSize: font.heading,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  noPromotionsText: {
+    color: colors.muted,
+    fontSize: font.body,
+    lineHeight: 23,
+    textAlign: 'center',
+    maxWidth: 460,
   },
   promotions: {
     width: '100%',

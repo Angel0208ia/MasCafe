@@ -1,14 +1,18 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
 import { signOut } from "@/app/actions";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder, OrderStatus, StaffRole } from "@/lib/types";
-import { OrderHistory } from "./order-history";
 import { PanelControls } from "./panel-controls";
 import styles from "./dashboard.module.css";
+const OrderHistory = dynamic(() => import('./order-history').then(module => module.OrderHistory), { loading: () => <p>Cargando historial…</p> });
+const MenuManager = dynamic(() => import('./menu-manager').then(module => module.MenuManager), { loading: () => <p>Cargando menú…</p> });
+const PromotionManager = dynamic(() => import('./promotion-manager').then(module => module.PromotionManager), { loading: () => <p>Cargando promociones…</p> });
+const ORDER_FIELDS = 'id, pickup_code, status, total, created_at, updated_at, order_items (id, product_id, product_name, quantity, unit_price, selections, notes), order_status_events (id, status, created_at)';
 
 type Filter = OrderStatus | "all";
 
@@ -28,15 +32,18 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
 ];
 
 function formatTime(value: string) {
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "America/Cancun", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return timeFormatter.format(new Date(value));
 }
+const timeFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "America/Cancun", hour: "2-digit", minute: "2-digit" });
+const dateFormatter = new Intl.DateTimeFormat("es-MX", { timeZone: "America/Cancun", day: "numeric", month: "short", year: "numeric" });
+const dayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Cancun", year: "numeric", month: "2-digit", day: "2-digit" });
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("es-MX", { timeZone: "America/Cancun", day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
+  return dateFormatter.format(new Date(value));
 }
 
 function isToday(value: string) {
-  const dateKey = (date: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Cancun", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+  const dateKey = (date: Date) => dayFormatter.format(date);
   return dateKey(new Date(value)) === dateKey(new Date());
 }
 
@@ -60,7 +67,8 @@ function nextActionLabel(status: OrderStatus) {
 
 export function Dashboard({ initialOrders, staffId, staffName, role }: { initialOrders: BusinessOrder[]; staffId: string; staffName: string; role: StaffRole }) {
   const [orders, setOrders] = useState(initialOrders);
-  const [section, setSection] = useState<"operation" | "history">("operation");
+  const [section, setSection] = useState<"operation" | "history" | "menu" | "promotions">("operation");
+  const [menuVisited, setMenuVisited] = useState(false);
   const [filter, setFilter] = useState<Filter>("received");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState(initialOrders[0]?.id ?? "");
@@ -95,7 +103,7 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
       .limit(100);
     if (!error && data) {
       const nextOrders = data as unknown as BusinessOrder[];
-      setOrders(nextOrders);
+      setOrders(current => JSON.stringify(current) === JSON.stringify(nextOrders) ? current : nextOrders);
       setSelectedId((current) => current || nextOrders[0]?.id || "");
     }
     if (showSpinner) setRefreshing(false);
@@ -103,8 +111,38 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase.channel("business-orders").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => { void loadOrders(); }).subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    const pending = new Set<string>();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let running = false;
+    let mounted = true;
+    const flush = async () => {
+      if (running || !mounted) return;
+      running = true;
+      const ids = [...pending]; pending.clear();
+      try {
+        const { data, error } = await supabase.from('orders').select(ORDER_FIELDS).in('id', ids).neq('status', 'cancelled');
+        if (error) { await loadOrders(); return; }
+        if (mounted) setOrders(current => {
+          const merged = [...current.filter(order => !ids.includes(order.id)), ...data as unknown as BusinessOrder[]]
+            .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 100);
+          return JSON.stringify(current) === JSON.stringify(merged) ? current : merged;
+        });
+      } catch { if (mounted) await loadOrders(); }
+      finally {
+        running = false;
+        if (mounted && pending.size) timer = setTimeout(() => { void flush(); }, 100);
+      }
+    };
+    const channel = supabase.channel("business-orders").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload: { eventType: string; old: Record<string, unknown>; new: Record<string, unknown> }) => {
+      const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+      if (typeof row.id !== 'string') { void loadOrders(); return; }
+      pending.add(row.id);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void flush(); }, 100);
+    }).subscribe();
+    const visible = () => { if (document.visibilityState === 'visible') void loadOrders(); };
+    document.addEventListener('visibilitychange', visible);
+    return () => { mounted = false; if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', visible); void supabase.removeChannel(channel); };
   }, [loadOrders]);
 
   const visibleOrders = useMemo(() => {
@@ -226,17 +264,18 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
         <nav className={styles.navigation} aria-label="Navegación principal">
           <button className={section === "operation" ? styles.navActive : ""} aria-current={section === "operation" ? "page" : undefined} onClick={() => setSection("operation")}><LayoutDashboard size={19} />Operación</button>
           <button className={section === "history" ? styles.navActive : ""} aria-current={section === "history" ? "page" : undefined} onClick={() => setSection("history")}><ClipboardList size={19} />Pedidos</button>
-          <button disabled><Store size={19} />Menú <small>Pronto</small></button>
-          <button disabled><Tag size={19} />Promociones <small>Pronto</small></button>
+          <button className={section === "menu" ? styles.navActive : ""} aria-current={section === "menu" ? "page" : undefined} onPointerEnter={() => { void import('./menu-manager'); }} onFocus={() => { void import('./menu-manager'); }} onClick={() => { setMenuVisited(true); setSection("menu"); }}><Store size={19} />Menú</button>
+          <button className={section === 'promotions' ? styles.navActive : ''} aria-current={section === 'promotions' ? 'page' : undefined} onClick={() => setSection('promotions')}><Tag size={19} />Promociones</button>
           {role === "admin" && <button disabled><Users size={19} />Personal <small>Pronto</small></button>}
         </nav>
         <div className={styles.sidebarFooter}><div className={styles.userAvatar}>{staffName.slice(0, 1).toLocaleUpperCase("es-MX")}</div><div className={styles.userInfo}><strong>{staffName}</strong><span>{role === "admin" ? "Administrador" : "Personal"}</span></div><form action={signOut}><button type="submit" aria-label="Cerrar sesión"><LogOut size={18} /></button></form></div>
       </aside>
 
       <main className={styles.main}>
-        <header className={styles.topbar}><div><p>{displayDate}</p><h1>{section === "operation" ? "Operación de hoy" : "Historial de pedidos"}</h1></div><div className={styles.topActions}><span className={styles.live}><i />En vivo</span><PanelControls orders={orders} staffId={staffId} onOpenOrder={(id) => { void openNotifiedOrder(id); }} /></div></header>
+        <header className={styles.topbar}><div><p>{displayDate}</p><h1>{section === "operation" ? "Operación de hoy" : section === "menu" ? "Menú del cliente" : section === 'promotions' ? 'Promociones del cliente' : "Historial de pedidos"}</h1></div><div className={styles.topActions}><span className={styles.live}><i />En vivo</span><PanelControls orders={orders} staffId={staffId} onOpenOrder={(id) => { void openNotifiedOrder(id); }} /></div></header>
 
-        {section === "history" ? <OrderHistory revision={orders} /> : <>
+        {menuVisited && <div hidden={section !== 'menu'}><MenuManager canEdit={role === "admin"} active={section === 'menu'} /></div>}
+        {section === "promotions" ? <PromotionManager canEdit={role === 'admin'} /> : section === "history" ? <OrderHistory revision={orders} /> : section === "menu" ? null : <>
         <section className={styles.metrics} aria-label="Resumen del día">
           <article><span className={styles.metricIconReceived}><ShoppingBag size={20} /></span><div><p>Recibidos</p><strong>{metrics.received}</strong></div></article>
           <article><span className={styles.metricIconPreparing}><CookingPot size={20} /></span><div><p>Preparando</p><strong>{metrics.preparing}</strong></div></article>

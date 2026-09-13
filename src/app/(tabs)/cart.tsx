@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
@@ -112,10 +112,12 @@ export default function CartScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const cart = useProductsStore((state) => state.cart);
+  useProductsStore((state) => state.promotions);
   const nextOrderAt = useProductsStore((state) => getOrderCooldownUntil(state.orders[0]));
   const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
   const clearCart = useProductsStore((state) => state.clearCart);
   const placeOrder = useProductsStore((state) => state.placeOrder);
+  const loadMenu = useProductsStore((state) => state.loadMenu);
   const isSubmittingOrder = useProductsStore((state) => state.isSubmittingOrder);
   const [now, setNow] = useState(Date.now());
   const [dialog, setDialog] = useState<DialogState | null>(null);
@@ -129,6 +131,7 @@ export default function CartScreen() {
 
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
+    void loadMenu(true);
     const restrictionUntil = Math.max(
       nextOrderAt,
       orderingBlockedUntil
@@ -141,7 +144,7 @@ export default function CartScreen() {
       if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [nextOrderAt, orderingBlockedUntil]));
+  }, [nextOrderAt, orderingBlockedUntil, loadMenu]));
 
   const submitOrder = async () => {
     const result = await placeOrder();

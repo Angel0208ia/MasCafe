@@ -22,10 +22,14 @@ Abre [http://localhost:3000](http://localhost:3000). Para ejecutar las pruebas u
 - Notificaciones de nuevos pedidos, cancelaciones y demoras.
 - Sonido opcional, umbral de demora y modo claro/oscuro/automático.
 - Preferencias por trabajador en este navegador y diseño adaptable.
+- Editor de menú: artículos, categorías, disponibilidad, precios MXN y opciones de personalización.
+- Carga de imágenes desde archivos, optimizadas a WebP antes de subirlas a Supabase Storage.
+
+Instala `../supabase/menu-management.sql` en el SQL Editor para habilitar escritura y almacenamiento de imágenes. Solo administradores activos pueden modificar el menú; el personal puede consultarlo. Eliminar un producto no borra los pedidos históricos.
 
 Los avisos requieren mantener el panel abierto y Realtime conectado; no son push.
 Los avisos de demora se conservan aunque se lean, hasta que el pedido esté listo,
-entregado o cancelado. Menú, Promociones y Personal aún no están implementados.
+entregado o cancelado. Promociones y Personal aún no están implementados.
 
 ## Comprobaciones
 

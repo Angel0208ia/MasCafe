@@ -1,9 +1,10 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog from '@/components/AppDialog';
+import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import { getOrderStatusLabel } from '@/constants/orderStatus';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { useProductsStore } from '@/store/productsStore';
@@ -141,9 +142,7 @@ export default function OrdersScreen() {
     router.navigate('/cart');
   }, [repeatOrder, router]);
 
-  useFocusEffect(useCallback(() => {
-    void loadTrackedOrders();
-  }, [loadTrackedOrders]));
+  useForegroundRefresh(loadTrackedOrders, 5000);
 
   useFocusEffect(useCallback(() => {
     setNow(Date.now());

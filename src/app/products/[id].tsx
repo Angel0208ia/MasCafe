@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -103,10 +103,10 @@ export default function ProductDetailScreen() {
   const horizontalPadding = getScreenPadding(width);
   const isDesktop = width >= layout.desktopBreakpoint;
 
-  if (!product) {
+  if (!product || !product.available) {
     return (
       <SafeAreaView style={styles.notFound} edges={['bottom', 'left', 'right']}>
-        <Text style={styles.notFoundTitle}>Producto no encontrado</Text>
+        <Text style={styles.notFoundTitle}>{product ? 'Artículo no disponible' : 'Producto no encontrado'}</Text>
         <Pressable style={styles.primaryButton} onPress={() => router.dismissTo('/products')}>
           <Text style={styles.primaryButtonText}>Volver al menú</Text>
         </Pressable>

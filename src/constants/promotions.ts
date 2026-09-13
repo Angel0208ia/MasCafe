@@ -7,8 +7,8 @@ export type PromotionRequirement = {
 
 export type Promotion = {
   id: string;
-  day: 2 | 4;
-  dayLabel: 'MARTES' | 'JUEVES';
+  day: number;
+  dayLabel: string;
   title: string;
   description: string;
   priceLabel: string;
@@ -24,7 +24,7 @@ export type AppliedPromotion = {
   discount: number;
 };
 
-export const PROMOTIONS: readonly Promotion[] = [
+export let PROMOTIONS: readonly Promotion[] = [
   {
     id: 'tuesday-cappuccino',
     day: 2,
@@ -53,6 +53,10 @@ export const PROMOTIONS: readonly Promotion[] = [
     softColor: '#E9F0E3',
   },
 ];
+
+export function setPromotions(promotions: Promotion[]) {
+  PROMOTIONS = promotions;
+}
 
 const WEEKDAYS: Record<string, number> = {
   Sun: 0,
@@ -101,18 +105,26 @@ export function getCartPricing(cart: CartItem[], date = new Date()) {
     0
   );
 
-  const appliedPromotions: AppliedPromotion[] = PROMOTIONS.flatMap((promotion) => {
-    if (!isPromotionActive(promotion, date)) return [];
-
-    const bundleCount = getPromotionBundleCount(cart, promotion);
-    if (bundleCount === 0) return [];
-
-    return [{
-      id: promotion.id,
-      title: promotion.title,
-      discount: promotion.discountPerBundle * bundleCount,
-    }];
-  });
+  const candidates = PROMOTIONS.filter(p => isPromotionActive(p, date) && getPromotionBundleCount(cart, p) > 0);
+  const quantities = new Map<string, number>();
+  cart.forEach(item => quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity));
+  let best: AppliedPromotion[] = [], bestDiscount = 0;
+  const search = (remaining: Map<string, number>, applied: AppliedPromotion[], amount: number, depth: number) => {
+    if (amount > bestDiscount) { best = applied; bestDiscount = amount; }
+    if (depth >= 3) return;
+    for (const p of candidates) {
+      if (!p.requirements.length || p.requirements.some(r => (remaining.get(r.productId) ?? 0) < r.quantity)) continue;
+      const next = new Map(remaining);
+      p.requirements.forEach(r => next.set(r.productId, (next.get(r.productId) ?? 0) - r.quantity));
+      search(next, [...applied, { id: p.id, title: p.title, discount: p.discountPerBundle }], amount + p.discountPerBundle, depth + 1);
+    }
+  };
+  search(quantities, [], 0, 0);
+  const appliedPromotions = best.reduce<AppliedPromotion[]>((list, p) => {
+    const existing = list.find(item => item.id === p.id);
+    if (existing) existing.discount += p.discount; else list.push({ ...p });
+    return list;
+  }, []);
 
   const discount = appliedPromotions.reduce(
     (total, promotion) => total + promotion.discount,
