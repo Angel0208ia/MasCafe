@@ -1,0 +1,20 @@
+.popup {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface, #fffaf5);
+  color: var(--ink);
+  box-shadow: 0 8px 30px #0003;
+}
+.popup > svg { color: #608345; flex-shrink: 0; }
+.popup button { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 6px; }

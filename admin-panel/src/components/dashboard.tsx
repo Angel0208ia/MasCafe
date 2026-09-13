@@ -3,7 +3,7 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BadgeDollarSign, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, ShoppingBag, Store, Tag, Users, X } from "lucide-react";
+import { BadgeDollarSign, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, ShoppingBag, Store, Tag, X } from "lucide-react";
 import { signOut } from "@/app/actions";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder, OrderStatus, StaffRole } from "@/lib/types";
@@ -266,7 +266,6 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
           <button className={section === "history" ? styles.navActive : ""} aria-current={section === "history" ? "page" : undefined} onClick={() => setSection("history")}><ClipboardList size={19} />Pedidos</button>
           <button className={section === "menu" ? styles.navActive : ""} aria-current={section === "menu" ? "page" : undefined} onPointerEnter={() => { void import('./menu-manager'); }} onFocus={() => { void import('./menu-manager'); }} onClick={() => { setMenuVisited(true); setSection("menu"); }}><Store size={19} />Menú</button>
           <button className={section === 'promotions' ? styles.navActive : ''} aria-current={section === 'promotions' ? 'page' : undefined} onClick={() => setSection('promotions')}><Tag size={19} />Promociones</button>
-          {role === "admin" && <button disabled><Users size={19} />Personal <small>Pronto</small></button>}
         </nav>
         <div className={styles.sidebarFooter}><div className={styles.userAvatar}>{staffName.slice(0, 1).toLocaleUpperCase("es-MX")}</div><div className={styles.userInfo}><strong>{staffName}</strong><span>{role === "admin" ? "Administrador" : "Personal"}</span></div><form action={signOut}><button type="submit" aria-label="Cerrar sesión"><LogOut size={18} /></button></form></div>
       </aside>

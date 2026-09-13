@@ -19,6 +19,7 @@ import type { MenuGroup, MenuProduct } from "@/lib/menu-types";
 import styles from "./menu-manager.module.css";
 import { loadMenuCatalog } from '@/lib/menu-query';
 import { filterMenuByName } from '@/lib/menu-search';
+import { SuccessPopup } from './success-popup';
 
 const money = (v: number | string) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(
@@ -57,6 +58,9 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
   const [products, setProducts] = useState<MenuProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const loadingRequest = useRef<Promise<void> | null>(null);
+  const revision = useRef(0);
+  const [success, setSuccess] = useState('');
+  const closeSuccess = useCallback(() => setSuccess(''), []);
   const [page, setPage] = useState(0);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
@@ -77,10 +81,12 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
         !product.available,
         product.updated_at,
       );
-      if (result.product)
+      if (result.product) {
+        revision.current++;
         setProducts((current) =>
           current.map((p) => (p.id === product.id ? result.product! : p)),
         );
+      }
       if (result.error) setNotice(result.error);
     } catch {
       setNotice("No se pudo cambiar la disponibilidad. Intenta nuevamente.");
@@ -91,10 +97,11 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
   const load = useCallback(() => {
     if (loadingRequest.current) return loadingRequest.current;
     loadingRequest.current = (async () => {
+    const startedAt = revision.current;
     setLoading(true);
     try {
       const result = await loadMenuCatalog();
-      setProducts(result);
+      if (startedAt === revision.current) setProducts(result);
     } catch {
       setNotice("No se pudo conectar. Intenta nuevamente.");
     } finally {
@@ -127,10 +134,11 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
       const result = await deleteMenuProduct(deleting.id, deleting.updated_at);
       if (result.error) setNotice(result.error);
       else {
+        revision.current++;
+        setProducts(current => current.filter(p => p.id !== deleting.id));
         setDeleting(null);
-        setNotice("Artículo eliminado. El historial de pedidos se conserva.");
-        if (loadingRequest.current) await loadingRequest.current;
-        await load();
+        setNotice('');
+        setSuccess("Artículo eliminado. El historial de pedidos se conserva.");
       }
     } catch {
       setNotice("No se pudo eliminar. Intenta nuevamente.");
@@ -140,6 +148,7 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
   }
   return (
     <section className={styles.root}>
+      <SuccessPopup message={success} onClose={closeSuccess} />
       <div className={styles.toolbar}>
         <div>
           <h2>Catálogo</h2>
@@ -274,11 +283,14 @@ export function MenuManager({ canEdit, active = true }: { canEdit: boolean; acti
           product={editing}
           categories={categories}
           onClose={() => setEditing(undefined)}
-          onSaved={async () => {
+          onSaved={(saved) => {
+            revision.current++;
+            setProducts(current => current.some(p => p.id === saved.id)
+              ? current.map(p => p.id === saved.id ? saved : p)
+              : [...current, saved]);
+            setSuccess(editing ? 'Artículo actualizado correctamente.' : 'Artículo creado correctamente.');
             setEditing(undefined);
-            setNotice("Artículo guardado en el menú del cliente.");
-            if (loadingRequest.current) await loadingRequest.current;
-            await load();
+            setNotice('');
           }}
         />
       )}
@@ -374,7 +386,7 @@ function ProductEditor({
   product: MenuProduct | null;
   categories: string[];
   onClose: () => void;
-  onSaved: () => Promise<void>;
+  onSaved: (saved: MenuProduct) => void;
 }) {
   const [groups, setGroups] = useState<MenuGroup[]>(
     (product?.customizations ?? []).map((g) => ({
@@ -420,7 +432,7 @@ function ProductEditor({
     try {
       const result = await saveMenuProduct(data);
       if (result.error) setError(result.error);
-      else await onSaved();
+      else if (result.product) onSaved(result.product);
     } catch {
       setError("No se pudo guardar. Intenta nuevamente.");
     } finally {

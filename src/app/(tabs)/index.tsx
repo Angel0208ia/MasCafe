@@ -18,6 +18,7 @@ import ProductImage from '@/components/ProductImage';
 import { getCancunWeekday, isPromotionActive } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { ALL_CATEGORIES, useProductsStore } from '@/store/productsStore';
+import { loadWeeklyBestSellers, type WeeklyBestSeller } from '@/lib/bestSellersApi';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,6 +30,9 @@ export default function HomeScreen() {
   const addPromotionToCart = useProductsStore((state) => state.addPromotionToCart);
   const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
   const [today, setToday] = useState(() => new Date());
+  const [bestSellers, setBestSellers] = useState<WeeklyBestSeller[]>([]);
+  const [rankingError, setRankingError] = useState(false);
+  const [rankingLoaded, setRankingLoaded] = useState(false);
   useForegroundRefresh(useCallback(() => {
     const now = new Date();
     setToday(previous => getCancunWeekday(previous) === getCancunWeekday(now) ? previous : now);
@@ -39,6 +43,19 @@ export default function HomeScreen() {
       products.some(product => product.id === requirement.productId && product.available)
     )
   );
+  useForegroundRefresh(useCallback(async () => {
+    if (promotions.some(promotion => isPromotionActive(promotion, new Date()) &&
+      promotion.requirements.every(r => products.some(p => p.id === r.productId && p.available)))) return;
+    try {
+      setBestSellers(await loadWeeklyBestSellers());
+      setRankingError(false);
+    } catch { setRankingError(true); }
+    finally { setRankingLoaded(true); }
+  }, [promotions, products]), 60_000);
+  const featured = bestSellers.flatMap(seller => {
+    const product = products.find(p => p.id === seller.product_id && p.available);
+    return product ? [product] : [];
+  });
   const cartCount = useProductsStore((state) =>
     state.cart.reduce((total, item) => total + item.quantity, 0)
   );
@@ -130,6 +147,39 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {todaysPromotions.length === 0 && (
+          <View>
+            <Text style={styles.sectionTitle}>Los favoritos de la semana</Text>
+            <View style={[styles.favorites, isDesktop && styles.favoritesDesktop]}>
+              {featured.map((product, index) => (
+                <Pressable key={product.id} accessibilityRole="button"
+                  accessibilityLabel={`${index + 1}. ${product.name}. Ver producto`}
+                  style={({ pressed }) => [styles.favoriteCard, isDesktop && styles.favoriteDesktop, pressed && styles.pressed]}
+                  onPress={() => {
+                    const current = useProductsStore.getState().products.find(p => p.id === product.id);
+                    if (!current?.available) {
+                      setDialog({ title: 'Artículo no disponible', message: 'Este artículo no está disponible por el momento.' });
+                      return;
+                    }
+                    router.navigate(`/products/${product.id}`);
+                  }}>
+                  <ProductImage uri={product.image} name={product.name} style={styles.favoriteImage} />
+                  <View style={styles.favoriteDetails}>
+                    <Text style={styles.favoriteRank}>#{index + 1} MÁS PEDIDO</Text>
+                    <Text style={styles.favoriteName} numberOfLines={2}>{product.name}</Text>
+                    <Text style={styles.favoritePrice}>${Number(product.price).toFixed(2)} MXN</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                </Pressable>
+              ))}
+            </View>
+            {!featured.length && <Text style={styles.noPromotionsText}>{!rankingLoaded
+              ? 'Buscando los favoritos de esta semana…'
+              : rankingError
+              ? 'Los favoritos no están disponibles por el momento. Explora nuestro menú.'
+              : 'Los favoritos se irán descubriendo con las ventas de esta semana. ¡Encuentra el tuyo en el menú!'}</Text>}
+          </View>
+        )}
         <Text style={styles.sectionTitle}>Promociones de hoy</Text>
 
         {todaysPromotions.length === 0 && (
@@ -253,6 +303,15 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  favorites: { gap: spacing.md },
+  favoritesDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
+  favoriteCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, backgroundColor: colors.surface },
+  favoriteDesktop: { flex: 1, minWidth: 280 },
+  favoriteImage: { width: 80, height: 80, borderRadius: radius.md, backgroundColor: colors.primary },
+  favoriteDetails: { flex: 1, gap: spacing.xs },
+  favoriteRank: { fontSize: 10, fontWeight: '800', color: colors.muted },
+  favoriteName: { fontSize: font.body, fontWeight: '700', color: colors.text },
+  favoritePrice: { fontSize: font.small, fontWeight: '800', color: colors.primary },
   screen: {
     flex: 1,
     backgroundColor: colors.background,

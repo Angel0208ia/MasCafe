@@ -1,25 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Bell, Settings, X, Volume2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder } from "@/lib/types";
+import { playOrderTone } from '@/lib/order-sound';
 import styles from "./panel-controls.module.css";
 
 type Preferences = { theme: "light" | "dark" | "system"; sound: boolean; newOrders: boolean; cancellations: boolean; lateOrders: boolean; delayMinutes: number };
 type Alert = { id: string; orderId: string; title: string; message: string; at: number; read: boolean; cancelled: boolean };
 const DEFAULTS: Preferences = { theme: "system", sound: false, newOrders: true, cancellations: true, lateOrders: true, delayMinutes: 15 };
+const HELP = {
+  newOrders: 'Muestra una notificación en cuanto llega un pedido nuevo al panel.',
+  cancellations: 'Avisa cuando un cliente cancela un pedido. El pedido cancelado deja de aparecer en Operación.',
+  lateOrders: 'Avisa si un pedido continúa en Recibido o Preparando después del tiempo elegido. El aviso permanece hasta que esté listo, entregado o cancelado.',
+  sound: 'Reproduce un sonido al recibir avisos habilitados. Después de recargar, haz un clic en el panel para habilitar el audio del navegador.',
+  delay: 'Tiempo desde que se recibió el pedido para avisar de una demora si sigue en Recibido o Preparando. No retrasa la alerta de pedidos nuevos.',
+  testSound: 'Reproduce una muestra del aviso para comprobar el sonido y su volumen. No genera ningún pedido.',
+};
+const THEME_HELP = {
+  light: 'Usa colores claros en el panel.',
+  dark: 'Usa colores oscuros en el panel para reducir el brillo.',
+  system: 'Cambia entre claro y oscuro siguiendo la configuración de tu dispositivo.',
+};
 
 export function PanelControls({ orders, staffId, onOpenOrder }: { orders: BusinessOrder[]; staffId: string; onOpenOrder: (id: string) => void }) {
   const [preferences, setPreferences] = useState(DEFAULTS);
+  const helpId = useId();
   const [loaded, setLoaded] = useState(false);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [panel, setPanel] = useState<"notifications" | "settings" | null>(null);
   const [soundNotice, setSoundNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const audio = useRef<AudioContext | null>(null);
+  const preferencesRef = useRef(DEFAULTS);
   const seen = useRef(new Set<string>());
   const storageKey = `mascafe-panel-preferences:${staffId}`;
+
+  useEffect(() => { preferencesRef.current = preferences; }, [preferences]);
 
   useEffect(() => {
     let active = true;
@@ -70,25 +88,35 @@ export function PanelControls({ orders, staffId, onOpenOrder }: { orders: Busine
 
   const playSound = useCallback(() => {
     const context = audio.current;
-    if (!context || context.state !== "running") return;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.connect(gain); gain.connect(context.destination);
-    oscillator.frequency.setValueAtTime(660, context.currentTime);
-    oscillator.frequency.setValueAtTime(880, context.currentTime + .12);
-    gain.gain.setValueAtTime(.08, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .35);
-    oscillator.start(); oscillator.stop(context.currentTime + .36);
-    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+    if (!context || context.state === 'closed') return;
+    if (context.state === 'running') playOrderTone(context);
+    else void context.resume().then(() => {
+      if (audio.current === context && preferencesRef.current.sound) playOrderTone(context);
+    }).catch(() => setSoundNotice('Haz clic en el panel para reactivar el sonido.'));
   }, []);
+
+  // Con sonido guardado, cualquier primer clic/tecla prepara el audio, sin
+  // obligar al trabajador a abrir Configuración después de cada recarga.
+  useEffect(() => {
+    if (!loaded || !preferences.sound) return;
+    const prepare = () => {
+      if (audio.current?.state !== 'running') void unlockSound();
+    };
+    document.addEventListener('pointerdown', prepare, true);
+    document.addEventListener('keydown', prepare, true);
+    return () => {
+      document.removeEventListener('pointerdown', prepare, true);
+      document.removeEventListener('keydown', prepare, true);
+    };
+  }, [loaded, preferences.sound, unlockSound]);
 
   const notify = useCallback((alert: Omit<Alert, "at" | "read">) => {
     if (seen.current.has(alert.id)) return;
     if (seen.current.size > 2000) seen.current.clear();
     seen.current.add(alert.id);
     setAlerts((current) => [{ ...alert, at: Date.now(), read: false }, ...current].slice(0, 50));
-    if (preferences.sound) playSound();
-  }, [preferences.sound, playSound]);
+    if (preferencesRef.current.sound) playSound();
+  }, [playSound]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -99,11 +127,11 @@ export function PanelControls({ orders, staffId, onOpenOrder }: { orders: Busine
       if (["ready", "delivered", "cancelled"].includes(record.status ?? "")) {
         setAlerts((current) => current.filter((alert) => !alert.id.startsWith(`${record.id}:late:`)));
       }
-      if (payload.eventType === "INSERT" && preferences.newOrders && record.status !== "cancelled") notify({ id: `${record.id}:new`, orderId: record.id, title: "Nuevo pedido", message: `Pedido ${record.pickup_code ?? "nuevo"}: pendiente de atención.`, cancelled: false });
-      if (payload.eventType === "UPDATE" && record.status === "cancelled" && preferences.cancellations) notify({ id: `${record.id}:cancelled`, orderId: record.id, title: "Pedido cancelado", message: `Pedido ${record.pickup_code ?? ""} cancelado. Ya no aparece en Operación.`, cancelled: true });
+      if (payload.eventType === "INSERT" && preferencesRef.current.newOrders && record.status === "received") notify({ id: `${record.id}:new`, orderId: record.id, title: "Nuevo pedido", message: `Pedido ${record.pickup_code ?? "nuevo"}: pendiente de atención.`, cancelled: false });
+      if (payload.eventType === "UPDATE" && record.status === "cancelled" && preferencesRef.current.cancellations) notify({ id: `${record.id}:cancelled`, orderId: record.id, title: "Pedido cancelado", message: `Pedido ${record.pickup_code ?? ""} cancelado. Ya no aparece en Operación.`, cancelled: true });
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [loaded, preferences.newOrders, preferences.cancellations, notify, staffId]);
+  }, [loaded, notify, staffId]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -149,12 +177,12 @@ export function PanelControls({ orders, staffId, onOpenOrder }: { orders: Busine
             if (!alert.cancelled) { onOpenOrder(alert.orderId); setPanel(null); }
           }}>{alert.cancelled ? "Marcar como leída" : "Ver pedido"}</button></article>)}</div>
         </> : <>
-          <section className={styles.section}><h3>Apariencia</h3><div className={styles.themes}>{(["light", "dark", "system"] as const).map((theme) => <button key={theme} aria-pressed={preferences.theme === theme} onClick={() => change("theme", theme)}>{theme === "light" ? "Claro" : theme === "dark" ? "Oscuro" : "Automático"}</button>)}</div></section>
+          <section className={styles.section}><h3>Apariencia</h3><div className={styles.themes}>{(["light", "dark", "system"] as const).map((theme) => <button key={theme} title={THEME_HELP[theme]} aria-describedby={`${helpId}-${theme}`} aria-pressed={preferences.theme === theme} onClick={() => change("theme", theme)}>{theme === "light" ? "Claro" : theme === "dark" ? "Oscuro" : "Automático"}<span hidden id={`${helpId}-${theme}`}>{THEME_HELP[theme]}</span></button>)}</div></section>
           <section className={styles.section}><h3>Alertas de pedidos</h3>{([
             ["newOrders", "Pedidos nuevos"], ["cancellations", "Cancelaciones"], ["lateOrders", "Pedidos con demora"], ["sound", "Aviso sonoro"],
-          ] as const).map(([key, label]) => <label className={styles.toggle} key={key}><span>{label}</span><input type="checkbox" checked={preferences[key]} onChange={(event) => { change(key, event.target.checked); if (key === "sound" && event.target.checked) void unlockSound(); }} /></label>)}
-          <label className={styles.delay}>Alertar después de<select value={preferences.delayMinutes} onChange={(event) => change("delayMinutes", Number(event.target.value))}>{[5, 10, 15, 20, 30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutos</option>)}</select></label>
-          <button className={styles.testSound} onClick={async () => { await unlockSound(); playSound(); }}><Volume2 size={16} />Probar sonido</button><p className={styles.hint}>{soundNotice || "El navegador requiere un clic para habilitar sonido en cada sesión."}</p>
+          ] as const).map(([key, label]) => <label className={styles.toggle} key={key} title={HELP[key]}><span>{label}</span><span hidden id={`${helpId}-${key}`}>{HELP[key]}</span><input type="checkbox" aria-describedby={`${helpId}-${key}`} checked={preferences[key]} onChange={(event) => { change(key, event.target.checked); if (key === "sound" && event.target.checked) void unlockSound(); }} /></label>)}
+          <label className={styles.delay} title={HELP.delay}>Alertar después de<span hidden id={`${helpId}-delay`}>{HELP.delay}</span><select title={HELP.delay} aria-describedby={`${helpId}-delay`} value={preferences.delayMinutes} onChange={(event) => change("delayMinutes", Number(event.target.value))}>{[5, 10, 15, 20, 30, 45, 60, 90, 120].map((minutes) => <option key={minutes} value={minutes}>{minutes} minutos</option>)}</select></label>
+          <button className={styles.testSound} title={HELP.testSound} aria-describedby={`${helpId}-testSound`} onClick={async () => { await unlockSound(); playSound(); }}><Volume2 size={16} />Probar sonido<span hidden id={`${helpId}-testSound`}>{HELP.testSound}</span></button><p className={styles.hint}>{soundNotice || "El navegador requiere un clic para habilitar sonido en cada sesión."}</p>
           </section><p className={styles.hint}>Cambios guardados automáticamente. Los avisos funcionan mientras el panel está abierto; no son notificaciones push.</p>
         </>}
       </div>

@@ -37,10 +37,11 @@ export async function savePromotion(input: PromotionRow, creating: boolean) {
   if (input.discount > subtotal) throw new Error('El descuento no puede superar el precio del combo.');
   const values = { title: input.title.trim(), description: input.description.trim(), day: input.day, discount: input.discount, active: input.active, requirements: input.requirements.map(r => ({ productId: r.productId, quantity: r.quantity })), updated_at: new Date().toISOString() };
   const result = creating
-    ? await db.from('promotions').insert({ ...values, id: randomUUID() }).select('id').single()
-    : await db.from('promotions').update(values).eq('id', input.id).eq('updated_at', input.updated_at).select('id').maybeSingle();
+    ? await db.from('promotions').insert({ ...values, id: randomUUID() }).select('*').single()
+    : await db.from('promotions').update(values).eq('id', input.id).eq('updated_at', input.updated_at).select('*').maybeSingle();
   if (result.error) throw new Error('No se pudo guardar la promoción. Verifica la migración promotions-management.sql.');
   if (!result.data) throw new Error('La promoción cambió. Actualiza e intenta nuevamente.');
+  return result.data as PromotionRow;
 }
 
 export async function deletePromotion(id: string, revision: string) {

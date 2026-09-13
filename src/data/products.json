@@ -6,7 +6,7 @@
     "price": 45,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/americano,coffee?lock=1",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -27,7 +27,7 @@
     "price": 60,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/cappuccino,coffee?lock=2",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -49,7 +49,7 @@
     "price": 60,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/latte,coffee?lock=3",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -71,7 +71,7 @@
     "price": 35,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/espresso,coffee?lock=4",
+    "image": "",
     "customizations": [
       {
         "id": "espresso_shots",
@@ -92,7 +92,7 @@
     "price": 60,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/mocha,coffee?lock=5",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -114,7 +114,7 @@
     "price": 55,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/iced,coffee?lock=6",
+    "image": "",
     "customizations": [
       {
         "id": "flavor",
@@ -159,7 +159,7 @@
     "price": 65,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/matcha,latte?lock=7",
+    "image": "",
     "customizations": [
       {
         "id": "temperature",
@@ -203,7 +203,7 @@
     "price": 70,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/matcha,yogurt?lock=8"
+    "image": ""
   },
   {
     "id": "9",
@@ -212,7 +212,7 @@
     "price": 60,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chai,latte?lock=9",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -234,7 +234,7 @@
     "price": 55,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/hot,chocolate?lock=10",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -256,7 +256,7 @@
     "price": 70,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/affogato,coffee?lock=11"
+    "image": ""
   },
   {
     "id": "12",
@@ -265,7 +265,7 @@
     "price": 50,
     "category": "Café",
     "available": true,
-    "image": "https://loremflickr.com/640/480/latte,peanut?lock=12",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -287,7 +287,7 @@
     "price": 30,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/tea,drink?lock=13",
+    "image": "",
     "customizations": [
       {
         "id": "temperature",
@@ -319,7 +319,7 @@
     "price": 50,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/fruit,tea?lock=14",
+    "image": "",
     "customizations": [
       {
         "id": "temperature",
@@ -351,7 +351,7 @@
     "price": 50,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/lavender,lemonade?lock=15",
+    "image": "",
     "customizations": [
       {
         "id": "ice",
@@ -374,7 +374,7 @@
     "price": 25,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/agua,fresca?lock=16",
+    "image": "",
     "customizations": [
       {
         "id": "ice",
@@ -396,7 +396,7 @@
     "price": 15,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/water,bottle?lock=17"
+    "image": ""
   },
   {
     "id": "18",
@@ -405,7 +405,7 @@
     "price": 55,
     "category": "Bebidas",
     "available": true,
-    "image": "https://loremflickr.com/640/480/refreshing,fruit,drink?lock=18",
+    "image": "",
     "customizations": [
       {
         "id": "ice",
@@ -428,7 +428,7 @@
     "price": 55,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/strawberry,smoothie?lock=19",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -460,7 +460,7 @@
     "price": 55,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/banana,smoothie?lock=20",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -492,7 +492,7 @@
     "price": 55,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/oat,smoothie?lock=21",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -524,7 +524,7 @@
     "price": 55,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chocolate,smoothie?lock=22",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -556,7 +556,7 @@
     "price": 60,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/fruit,smoothie?lock=23",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -602,7 +602,7 @@
     "price": 65,
     "category": "Licuados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/banana,strawberry,smoothie?lock=24",
+    "image": "",
     "customizations": [
       {
         "id": "size",
@@ -634,7 +634,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/frappe,cappuccino?lock=25",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -667,7 +667,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/strawberry,yogurt,smoothie?lock=26"
+    "image": ""
   },
   {
     "id": "27",
@@ -676,7 +676,7 @@
     "price": 65,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/strawberry,slush?lock=27"
+    "image": ""
   },
   {
     "id": "28",
@@ -685,7 +685,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chocolate,frappe?lock=28",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -707,7 +707,7 @@
     "price": 65,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/berry,frappe?lock=29"
+    "image": ""
   },
   {
     "id": "30",
@@ -716,7 +716,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/taro,milk,tea?lock=30",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -738,7 +738,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/matcha,frappe?lock=31",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -760,7 +760,7 @@
     "price": 70,
     "category": "Frappés",
     "available": true,
-    "image": "https://loremflickr.com/640/480/matcha,taro,drink?lock=32",
+    "image": "",
     "customizations": [
       {
         "id": "milk",
@@ -782,7 +782,7 @@
     "price": 40,
     "category": "Granizados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/pina,colada,drink?lock=33"
+    "image": ""
   },
   {
     "id": "34",
@@ -791,7 +791,7 @@
     "price": 40,
     "category": "Granizados",
     "available": true,
-    "image": "https://loremflickr.com/640/480/mango,chamoy,drink?lock=34"
+    "image": ""
   },
   {
     "id": "35",
@@ -800,7 +800,7 @@
     "price": 50,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chilaquiles,mexican,food?lock=35",
+    "image": "",
     "customizations": [
       {
         "id": "sauce",
@@ -831,7 +831,7 @@
     "price": 50,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/molletes,mexican,food?lock=36",
+    "image": "",
     "customizations": [
       {
         "id": "ham",
@@ -852,7 +852,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/burrito,mexican,food?lock=37",
+    "image": "",
     "customizations": [
       {
         "id": "protein",
@@ -874,7 +874,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/croissant,sandwich?lock=38"
+    "image": ""
   },
   {
     "id": "39",
@@ -883,7 +883,7 @@
     "price": 70,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/croissant,food?lock=39"
+    "image": ""
   },
   {
     "id": "40",
@@ -892,7 +892,7 @@
     "price": 50,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/pancakes,honey?lock=40",
+    "image": "",
     "customizations": [
       {
         "id": "topping",
@@ -914,7 +914,7 @@
     "price": 40,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/mexican,sandwich?lock=41",
+    "image": "",
     "customizations": [
       {
         "id": "filling",
@@ -935,7 +935,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/ciabatta,sandwich?lock=42"
+    "image": ""
   },
   {
     "id": "43",
@@ -944,7 +944,7 @@
     "price": 70,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/waffle,sandwich?lock=43"
+    "image": ""
   },
   {
     "id": "44",
@@ -953,7 +953,7 @@
     "price": 50,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/sushi,cake?lock=44",
+    "image": "",
     "customizations": [
       {
         "id": "protein",
@@ -985,7 +985,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/poke,bowl?lock=45",
+    "image": "",
     "customizations": [
       {
         "id": "protein",
@@ -1045,7 +1045,7 @@
     "price": 70,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/baguette,sandwich?lock=46"
+    "image": ""
   },
   {
     "id": "47",
@@ -1054,7 +1054,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/potato,salad?lock=47"
+    "image": ""
   },
   {
     "id": "48",
@@ -1063,7 +1063,7 @@
     "price": 70,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chicken,burger?lock=48"
+    "image": ""
   },
   {
     "id": "49",
@@ -1072,7 +1072,7 @@
     "price": 60,
     "category": "Pancita llena, corazón contento",
     "available": true,
-    "image": "https://loremflickr.com/640/480/quesadilla,cheese?lock=49"
+    "image": ""
   },
   {
     "id": "50",
@@ -1081,7 +1081,7 @@
     "price": 36,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/lemon,dessert?lock=50"
+    "image": ""
   },
   {
     "id": "51",
@@ -1090,7 +1090,7 @@
     "price": 45,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/lotus,cheesecake?lock=51"
+    "image": ""
   },
   {
     "id": "52",
@@ -1099,7 +1099,7 @@
     "price": 45,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/tiramisu,dessert?lock=52"
+    "image": ""
   },
   {
     "id": "53",
@@ -1108,7 +1108,7 @@
     "price": 30,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/jelly,dessert?lock=53"
+    "image": ""
   },
   {
     "id": "54",
@@ -1117,7 +1117,7 @@
     "price": 40,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/pound,cake?lock=54"
+    "image": ""
   },
   {
     "id": "55",
@@ -1126,7 +1126,7 @@
     "price": 40,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/chocolate,brownie?lock=55"
+    "image": ""
   },
   {
     "id": "56",
@@ -1135,7 +1135,7 @@
     "price": 30,
     "category": "La vida es corta... pide postre",
     "available": true,
-    "image": "https://loremflickr.com/640/480/pastry,sweet,bread?lock=56"
+    "image": ""
   },
   {
     "id": "57",
@@ -1144,7 +1144,7 @@
     "price": 25,
     "category": "Snacks",
     "available": true,
-    "image": "https://loremflickr.com/640/480/corn,snack?lock=57"
+    "image": ""
   },
   {
     "id": "58",
@@ -1153,7 +1153,7 @@
     "price": 50,
     "category": "Snacks",
     "available": true,
-    "image": "https://loremflickr.com/640/480/nachos,chips?lock=58"
+    "image": ""
   },
   {
     "id": "59",
@@ -1162,7 +1162,7 @@
     "price": 35,
     "category": "Snacks",
     "available": true,
-    "image": "https://loremflickr.com/640/480/banana,chips?lock=59"
+    "image": ""
   },
   {
     "id": "60",
@@ -1171,7 +1171,7 @@
     "price": 25,
     "category": "Snacks",
     "available": true,
-    "image": "https://loremflickr.com/640/480/wafer,dessert?lock=60"
+    "image": ""
   },
   {
     "id": "61",
@@ -1180,7 +1180,7 @@
     "price": 45,
     "category": "Mi lado fit",
     "available": true,
-    "image": "https://loremflickr.com/640/480/green,juice?lock=61"
+    "image": ""
   },
   {
     "id": "62",
@@ -1189,7 +1189,7 @@
     "price": 65,
     "category": "Mi lado fit",
     "available": true,
-    "image": "https://loremflickr.com/640/480/healthy,salad?lock=62"
+    "image": ""
   },
   {
     "id": "63",
@@ -1198,7 +1198,7 @@
     "price": 60,
     "category": "Mi lado fit",
     "available": true,
-    "image": "https://loremflickr.com/640/480/fruit,yogurt?lock=63"
+    "image": ""
   },
   {
     "id": "64",
@@ -1207,7 +1207,7 @@
     "price": 30,
     "category": "Mi lado fit",
     "available": true,
-    "image": "https://loremflickr.com/640/480/frozen,grapes?lock=64"
+    "image": ""
   },
   {
     "id": "65",
@@ -1216,7 +1216,7 @@
     "price": 90,
     "category": "Hoy sí voy al gym",
     "available": true,
-    "image": "https://loremflickr.com/640/480/protein,shake?lock=65",
+    "image": "",
     "customizations": [
       {
         "id": "flavor",

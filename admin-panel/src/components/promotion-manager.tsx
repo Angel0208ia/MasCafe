@@ -8,6 +8,7 @@ import type { MenuProduct } from '@/lib/menu-types';
 import { DAYS, type PromotionRow } from '@/lib/promotion-types';
 import { savePromotion, deletePromotion } from '@/app/promotion-actions';
 import styles from './menu-manager.module.css';
+import { SuccessPopup } from './success-popup';
 
 const money = (n: number) => `${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(n)} MXN`;
 export function PromotionManager({ canEdit }: { canEdit: boolean }) {
@@ -21,12 +22,17 @@ export function PromotionManager({ canEdit }: { canEdit: boolean }) {
   const [notice, setNotice] = useState('');
   const [query, setQuery] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
+  const revision = useRef(0);
+  const [success, setSuccess] = useState('');
+  const closeSuccess = useCallback(() => setSuccess(''), []);
   const load = useCallback(async () => {
+    const startedAt = revision.current;
     setLoading(true);
     try {
       const [result, catalog] = await Promise.all([createClient().from('promotions').select('*').order('day').order('id'), loadMenuCatalog()]);
       if (result.error) throw new Error('No se pudieron cargar las promociones. Instala promotions-management.sql en Supabase.');
-      setPromotions(result.data as PromotionRow[]); setProducts(catalog);
+      if (startedAt === revision.current) setPromotions(result.data as PromotionRow[]);
+      setProducts(catalog);
     } catch (e) { setNotice(e instanceof Error ? e.message : 'No se pudo cargar.'); }
     finally { setLoading(false); }
   }, []);
@@ -37,13 +43,25 @@ export function PromotionManager({ canEdit }: { canEdit: boolean }) {
   const submit = async () => {
     setBusy(true); setNotice('');
     try {
-      if (draft) await savePromotion(draft, creating);
-      else if (removing) await deletePromotion(removing.id, removing.updated_at);
-      setDraft(null); setRemoving(null); await load();
+      if (draft) {
+        const saved = await savePromotion(draft, creating);
+        revision.current++;
+        setPromotions(current => (current.some(p => p.id === saved.id)
+          ? current.map(p => p.id === saved.id ? saved : p)
+          : [...current, saved]).sort((a, b) => a.day - b.day || a.id.localeCompare(b.id)));
+        setSuccess(creating ? 'Promoción creada correctamente.' : 'Promoción actualizada correctamente.');
+      } else if (removing) {
+        await deletePromotion(removing.id, removing.updated_at);
+        revision.current++;
+        setPromotions(current => current.filter(p => p.id !== removing.id));
+        setSuccess('Promoción eliminada correctamente.');
+      }
+      setDraft(null); setRemoving(null);
     } catch (e) { setNotice(e instanceof Error ? e.message : 'No se pudo guardar.'); }
     finally { setBusy(false); }
   };
   return <section className={styles.root}>
+    <SuccessPopup message={success} onClose={closeSuccess} />
     <div className={styles.toolbar}><div><h2>Promociones</h2><p>Combos, descuentos y vigencia por día. Los extras conservan su precio.</p></div><div className={styles.buttons}><button disabled={loading || busy} onClick={() => { void load(); }}><RefreshCw size={16} />Actualizar</button>{canEdit && <button className={styles.primary} onClick={() => { setNotice(''); setCreating(true); setDraft({ id: '', title: '', description: '', day: 2, discount: 15, active: true, requirements: [{ productId: products[0]?.id ?? '', quantity: 1 }], updated_at: '' }); }}><Plus size={16} />Nueva promoción</button>}</div></div>
     {notice && !draft && !removing && <p role="alert" className={styles.notice}>{notice}</p>}
     <div className={styles.filters}><input aria-label="Buscar promociones" placeholder="Buscar promociones…" value={query} onChange={e => setQuery(e.target.value)} /></div>

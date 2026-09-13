@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { MenuGroup, MenuProduct } from "@/lib/menu-types";
 
@@ -214,7 +215,7 @@ export async function saveMenuProduct(form: FormData) {
           .eq("id", id)
           .eq("updated_at", previous.updated_at)
       : db.from("products").insert({ ...record, id, image });
-    const { data, error } = await operation.select("id");
+    const { data, error } = await operation.select("*");
     if (error || !data?.length)
       throw new Error(
         "No se pudo guardar. Actualiza el menú y verifica los permisos de menu-management.sql.",
@@ -223,14 +224,15 @@ export async function saveMenuProduct(form: FormData) {
       previous && previous.image !== image ? managedPath(previous.image) : null;
     // Una vez guardado, nunca borrar la nueva foto si falla la limpieza anterior.
     uploaded = null;
-    if (oldPath)
-      await db.storage
-        .from("menu-images")
-        .remove([oldPath])
-        .catch(() => undefined);
-    return { success: true };
+    if (oldPath) after(async () => {
+      await db.storage.from("menu-images").remove([oldPath]).catch(() => undefined);
+    });
+    return { product: data[0] as MenuProduct };
   } catch (e) {
-    if (uploaded) await db.storage.from("menu-images").remove([uploaded]);
+    if (uploaded) {
+      const path = uploaded;
+      after(async () => { await db.storage.from("menu-images").remove([path]).catch(() => undefined); });
+    }
     return {
       error: e instanceof Error ? e.message : "No se pudo guardar el artículo.",
     };
@@ -256,11 +258,9 @@ export async function deleteMenuProduct(id: string, updatedAt: string) {
         "No se pudo eliminar. Actualiza el menú y verifica los permisos.",
       );
     const path = managedPath(data[0].image);
-    if (path)
-      await db.storage
-        .from("menu-images")
-        .remove([path])
-        .catch(() => undefined);
+    if (path) after(async () => {
+      await db.storage.from("menu-images").remove([path]).catch(() => undefined);
+    });
     return { success: true };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "No se pudo eliminar." };
