@@ -311,7 +311,8 @@ create policy "El menú es público"
 
 revoke all on public.orders, public.order_items from anon, authenticated;
 grant select on public.products to anon, authenticated;
-grant execute on function public.create_anonymous_order(jsonb) to anon, authenticated;
+-- Esta función es interna: la app debe usar la versión que exige client_token.
+revoke all on function public.create_anonymous_order(jsonb) from public, anon, authenticated;
 grant execute on function public.get_anonymous_order(uuid) to anon, authenticated;
 
 create or replace function public.create_anonymous_order_with_client(
@@ -333,6 +334,7 @@ as $$
 declare
   v_client_token uuid := coalesce(p_client_token, gen_random_uuid());
   v_blocked_until timestamptz;
+  v_last_order_at timestamptz;
   v_created record;
 begin
   insert into public.anonymous_clients (client_token)
@@ -348,6 +350,18 @@ begin
   if v_blocked_until is not null and v_blocked_until > now() then
     raise exception 'No puedes generar pedidos hasta % por cancelaciones reiteradas',
       to_char(v_blocked_until at time zone 'America/Cancun', 'DD/MM/YYYY HH24:MI');
+  end if;
+
+  -- El bloqueo se valida en el servidor y la fila del cliente permanece
+  -- bloqueada durante la transacción para impedir pedidos simultáneos.
+  select max(orders.created_at)
+  into v_last_order_at
+  from public.orders
+  where orders.client_token = v_client_token;
+
+  if v_last_order_at is not null
+    and v_last_order_at > now() - interval '30 minutes' then
+    raise exception 'Por el momento solo se permite un pedido cada 30 minutos';
   end if;
 
   select * into v_created from public.create_anonymous_order(p_items);
