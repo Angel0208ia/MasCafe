@@ -1,6 +1,6 @@
 import type { CustomizationGroup, Product } from '../types/product';
 import { getProductImage } from '../constants/productImages';
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 
 type ProductRow = {
   id: string;
@@ -17,6 +17,7 @@ let cachedMenu: Product[] | undefined;
 let cachedRevision = '';
 
 export async function fetchMenu(): Promise<Product[]> {
+  const supabase = getSupabaseClient();
   // Una revisión pequeña evita descargar fotos, descripciones y opciones cada vez.
   const revision = await supabase.from('products').select('id, updated_at', { count: 'exact' })
     .order('updated_at', { ascending: false }).order('id').limit(1);
