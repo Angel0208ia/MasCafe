@@ -1,5 +1,5 @@
 import type { CancelOrderResult, CartItem, Order, OrderStatus, SelectedCustomization } from '../types/product';
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 import { readStorageItem } from './storageAccess';
 
 const TRACKING_TOKENS_KEY = 'mascafe-tracking-tokens';
@@ -129,6 +129,7 @@ function toOrder(order: RemoteOrder): Order {
 }
 
 export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
+  const supabase = getSupabaseClient();
   const payload = items.map((item) => ({
     productId: item.productId,
     quantity: item.quantity,
@@ -162,6 +163,7 @@ export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
 }
 
 export async function fetchTrackedOrders(): Promise<Order[]> {
+  const supabase = getSupabaseClient();
   const responses = await Promise.all(
     getTrackingTokens().map(async (token) => {
       const completed = completedOrders.get(token);
@@ -184,6 +186,7 @@ export async function fetchTrackedOrders(): Promise<Order[]> {
 }
 
 export async function cancelAnonymousOrder(orderId: string): Promise<CancelOrderResult> {
+  const supabase = getSupabaseClient();
   const trackingToken = getTrackedOrderTokens()[orderId];
   if (!trackingToken) {
     return { success: false, message: 'No encontramos la autorización para cancelar este pedido.' };
