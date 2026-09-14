@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 
 export type WeeklyBestSeller = { product_id: string; quantity: number };
 let cached: WeeklyBestSeller[] = [];
@@ -10,6 +10,7 @@ export function loadWeeklyBestSellers(): Promise<WeeklyBestSeller[]> {
   if (pending) return pending;
   if (Date.now() - refreshedAt < 60_000) return Promise.resolve(cached);
   pending = (async () => {
+    const supabase = getSupabaseClient();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
