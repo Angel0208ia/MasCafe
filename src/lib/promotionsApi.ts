@@ -1,9 +1,10 @@
-import { supabase } from './supabase';
+import { getSupabaseClient } from './supabase';
 import { PROMOTIONS, setPromotions, type Promotion } from '../constants/promotions';
 import type { Product } from '../types/product';
 
 const days = ['DOMINGO','LUNES','MARTES','MIÉRCOLES','JUEVES','VIERNES','SÁBADO'];
 export async function refreshPromotions(products: Product[]): Promise<readonly Promotion[]> {
+  const supabase = getSupabaseClient();
   const { data, error } = await supabase.from('promotions').select('id,title,description,day,discount,requirements').eq('active',true).order('day').order('id');
   if (error) {
     // Mantiene la versión anterior hasta instalar la migración o recuperar conexión.
