@@ -29,6 +29,8 @@ type DialogState = {
   actions?: AppDialogAction[];
 };
 
+const INITIAL_TIME = Date.now();
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -119,7 +121,7 @@ export default function CartScreen() {
   const placeOrder = useProductsStore((state) => state.placeOrder);
   const loadMenu = useProductsStore((state) => state.loadMenu);
   const isSubmittingOrder = useProductsStore((state) => state.isSubmittingOrder);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(INITIAL_TIME);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const pricing = getCartPricing(cart, new Date(now));

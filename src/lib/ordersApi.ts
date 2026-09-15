@@ -32,18 +32,18 @@ type RemoteOrder = {
   status: OrderStatus;
   createdAt: string;
   total: number | string;
-  statusEvents?: Array<{
+  statusEvents?: {
     status: OrderStatus;
     createdAt: string;
-  }>;
-  items: Array<{
+  }[];
+  items: {
     productId: string;
     name: string;
     quantity: number;
     unitPrice: number | string;
     selections: SelectedCustomization[];
     notes: string;
-  }>;
+  }[];
 };
 
 function getTrackingTokens(): string[] {

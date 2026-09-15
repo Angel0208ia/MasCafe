@@ -29,8 +29,9 @@ Todos los importes se manejan en **pesos mexicanos (MXN)**. El sistema registra 
 
 - Menú: crear, editar y eliminar artículos, categorías y grupos de opciones. Botón de disponibilidad verde/rojo, solo administradores. Los agotados permanecen opacos en el cliente y no pueden abrirse ni agregarse al carrito.
 - Fotografías desde el dispositivo, optimizadas a WebP (máximo 1200 px y 2 MB), almacenadas en Supabase Storage.
+- Promociones: crear, editar y eliminar combos, precios y días de vigencia desde el panel.
 
-Las pestañas **Promociones** y **Personal** siguen siendo funcionalidades futuras.
+La pestaña **Personal** se retiró de la navegación; las cuentas y roles se administran en Supabase.
 
 ## Reglas del negocio
 
@@ -77,8 +78,11 @@ Para una **base nueva**, ejecutar en el SQL Editor en este orden:
 3. [`supabase/customer-cancellations.sql`](supabase/customer-cancellations.sql): reglas de cancelación y transiciones del negocio.
 4. [`supabase/seed-products.sql`](supabase/seed-products.sql): catálogo inicial.
 5. [`supabase/menu-management.sql`](supabase/menu-management.sql): permisos de administración del catálogo y bucket público `menu-images` para fotos de productos, con escritura exclusiva de administradores.
+6. [`supabase/promotions-management.sql`](supabase/promotions-management.sql): administración de promociones.
+7. [`supabase/weekly-best-sellers.sql`](supabase/weekly-best-sellers.sql): ranking semanal mostrado cuando no hay promociones vigentes.
+8. [`supabase/migrations/202609150001_harden_function_privileges.sql`](supabase/migrations/202609150001_harden_function_privileges.sql): permisos mínimos de funciones públicas.
 
-Para una base existente, ejecutar solamente `menu-management.sql` para habilitar el editor. No volver a ejecutar el seed: sobrescribe modificaciones. La app cliente actualiza el catálogo al volver a cargarlo, con caché de hasta 60 segundos; los pedidos históricos conservan sus productos y precios originales aunque se elimine un artículo.
+Para una base existente, aplicar solo los archivos incrementales que falten y revisar las migraciones ya ejecutadas. No volver a ejecutar el seed: sobrescribe modificaciones. La app cliente actualiza el catálogo al volver a cargarlo, con caché de hasta 60 segundos; los pedidos históricos conservan sus productos y precios originales aunque se elimine un artículo.
 
 **No ejecutar otra vez `schema.sql` sobre una base existente**: contiene creación de tablas y tipos, no es una migración incremental. Revisar los cambios necesarios antes de aplicar `apply-promotions.sql` o `customer-cancellations.sql`. El seed actualiza productos y puede sobrescribir cambios del catálogo.
 

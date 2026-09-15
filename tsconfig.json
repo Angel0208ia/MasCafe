@@ -19,7 +19,6 @@
   ],
   "exclude": [
     "admin-panel",
-    "MasCafe",
     "work",
     "dist",
     "web-build"

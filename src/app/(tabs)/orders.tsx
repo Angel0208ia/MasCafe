@@ -11,6 +11,8 @@ import { useProductsStore } from '@/store/productsStore';
 import { getOrderCooldownUntil } from '@/lib/orderCooldown';
 import type { Order } from '@/types/product';
 
+const INITIAL_TIME = Date.now();
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -121,7 +123,7 @@ export default function OrdersScreen() {
   const repeatOrder = useProductsStore((state) => state.repeatOrder);
   const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
   const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(INITIAL_TIME);
   const latestOrder = orders[0];
   const nextOrderAt = getOrderCooldownUntil(latestOrder);
   const regularCooldownRemainingMs = Math.max(0, nextOrderAt - now);

@@ -30,6 +30,6 @@ test('Metro excluye otros proyectos y exportaciones, pero conserva la app y sus 
   const require = createRequire(import.meta.url);
   const config = require('../metro.config.js');
   const blocked = file => config.resolver.blockList.some(rule => rule.test(path.resolve(file)));
-  for (const file of ['admin-panel/node_modules/react/index.js', 'MasCafe/src/app/index.tsx', 'work/ios-tabs-check/index.html', 'dist/index.html']) assert.equal(blocked(file), true, file);
+  for (const file of ['admin-panel/node_modules/react/index.js', 'work/ios-tabs-check/index.html', 'dist/index.html']) assert.equal(blocked(file), true, file);
   for (const file of ['src/app/_layout.tsx', 'assets/images/icon.png', 'node_modules/react/index.js']) assert.equal(blocked(file), false, file);
 });

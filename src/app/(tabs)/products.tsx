@@ -18,7 +18,7 @@ import ProductCard from '@/components/ProductCard';
 import AppDialog from '@/components/AppDialog';
 import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
-import { filterByCategory, useProductsStore } from '@/store/productsStore';
+import { filterByCategory, getCategories, useProductsStore } from '@/store/productsStore';
 import type { Product } from '@/types/product';
 
 function normalizeSearchText(value: string): string {
@@ -36,13 +36,10 @@ export default function ProductsScreen() {
   const selectedCategory = useProductsStore((state) => state.selectedCategory);
   const setCategory = useProductsStore((state) => state.setCategory);
   const loadMenu = useProductsStore((state) => state.loadMenu);
-  const getCategories = useProductsStore((state) => state.getCategories);
   const [searchQuery, setSearchQuery] = useState('');
   const [unavailableName, setUnavailableName] = useState('');
 
-  // getCategories crea el arreglo a partir del menú remoto. Memorizarlo aquí
-  // evita que Zustand reciba una referencia distinta en cada render.
-  const categories = useMemo(() => getCategories(), [getCategories, products]);
+  const categories = useMemo(() => getCategories(products), [products]);
   const searchIndex = useMemo(() => new Map(products.map((product) => [
     product.id, normalizeSearchText(`${product.name} ${product.description}`),
   ])), [products]);

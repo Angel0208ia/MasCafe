@@ -68,6 +68,16 @@ function getCartQuantity(cart: CartItem[]): number {
   return cart.reduce((total, item) => total + item.quantity, 0);
 }
 
+export function getCategories(products: Product[]): CategoryOption[] {
+  return [
+    { label: ALL_CATEGORIES, value: ALL_CATEGORIES },
+    ...Array.from(new Set(products.map((product) => product.category))).map((category) => ({
+      label: CATEGORY_LABELS[category] ?? category,
+      value: category,
+    })),
+  ];
+}
+
 function restoreSelections(
   product: Product,
   previousSelections: SelectedCustomization[]
@@ -134,7 +144,6 @@ type ProductsState = {
   loadTrackedOrders: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   getFilteredProducts: () => Product[];
-  getCategories: () => CategoryOption[];
 };
 
 export const useProductsStore = create<ProductsState>((set, get) => ({
@@ -486,11 +495,4 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   getFilteredProducts: () => filterByCategory(get().products, get().selectedCategory),
 
-  getCategories: () => [
-    { label: ALL_CATEGORIES, value: ALL_CATEGORIES },
-    ...Array.from(new Set(get().products.map((product) => product.category))).map((category) => ({
-      label: CATEGORY_LABELS[category] ?? category,
-      value: category,
-    })),
-  ],
 }));

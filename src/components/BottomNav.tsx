@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, spacing } from '../constants/theme';
 import { useProductsStore } from '../store/productsStore';
@@ -24,7 +24,7 @@ function TabItem({
   onPress: () => void;
   onLongPress: () => void;
 }) {
-  const highlight = useRef(new Animated.Value(selected ? 1 : 0)).current;
+  const [highlight] = useState(() => new Animated.Value(selected ? 1 : 0));
 
   useEffect(() => {
     if (reduceMotion) {

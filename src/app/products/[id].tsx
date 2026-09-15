@@ -72,6 +72,8 @@ export default function ProductDetailScreen() {
           )
         : null;
 
+      // Sincroniza el formulario con otro producto o artículo del carrito.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelections(savedSelections ?? createInitialSelections(product));
       setQuantity(cartItem?.productId === product.id ? cartItem.quantity : 1);
       setNotes(cartItem?.productId === product.id ? cartItem.notes : '');

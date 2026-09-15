@@ -158,7 +158,7 @@ export default function OrderDetailScreen() {
 
     setDialog({
       title: 'Pedido cancelado',
-      message: result.blockedUntil > Date.now()
+      message: result.blockedUntil > 0
         ? 'Al ser una cancelación reiterada, no podrás generar pedidos durante 2 horas.'
         : 'El pedido fue retirado de la fila. Si cancelas otro pedido, se bloquearán nuevos pedidos durante 2 horas.',
       icon: 'checkmark-circle-outline',
