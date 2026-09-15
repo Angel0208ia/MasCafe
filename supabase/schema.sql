@@ -313,7 +313,7 @@ revoke all on public.orders, public.order_items from anon, authenticated;
 grant select on public.products to anon, authenticated;
 -- Esta función es interna: la app debe usar la versión que exige client_token.
 revoke all on function public.create_anonymous_order(jsonb) from public, anon, authenticated;
-grant execute on function public.get_anonymous_order(uuid) to anon, authenticated;
+grant execute on function public.get_anonymous_order(uuid) to anon;
 
 create or replace function public.create_anonymous_order_with_client(
   p_items jsonb,
@@ -459,7 +459,7 @@ $$;
 
 alter table public.anonymous_clients enable row level security;
 revoke all on public.anonymous_clients from anon, authenticated;
-revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public;
-revoke all on function public.cancel_anonymous_order(uuid, uuid) from public;
-grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon, authenticated;
-grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon, authenticated;
+revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public, anon, authenticated;
+revoke all on function public.cancel_anonymous_order(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon;
+grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon;

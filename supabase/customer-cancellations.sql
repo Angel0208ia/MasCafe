@@ -72,8 +72,8 @@ begin
 end;
 $$;
 
-revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public;
-grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon, authenticated;
+revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public, anon, authenticated;
+grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon;
 
 create or replace function public.cancel_anonymous_order(
   p_tracking_token uuid,
@@ -156,8 +156,8 @@ begin
 end;
 $$;
 
-revoke all on function public.cancel_anonymous_order(uuid, uuid) from public;
-grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon, authenticated;
+revoke all on function public.cancel_anonymous_order(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon;
 
 -- El panel filtra los cancelados, pero conserva permiso de lectura para recibir
 -- el evento Realtime que hace que desaparezcan inmediatamente de la interfaz.
@@ -211,5 +211,5 @@ begin
 end;
 $$;
 
-revoke all on function public.staff_update_order_status(uuid, public.order_status) from public;
+revoke all on function public.staff_update_order_status(uuid, public.order_status) from public, anon, authenticated;
 grant execute on function public.staff_update_order_status(uuid, public.order_status) to authenticated;

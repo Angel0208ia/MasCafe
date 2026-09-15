@@ -109,4 +109,4 @@ begin
 end;
 $$;
 
-grant execute on function public.create_anonymous_order(jsonb) to anon, authenticated;
+revoke all on function public.create_anonymous_order(jsonb) from public, anon, authenticated;

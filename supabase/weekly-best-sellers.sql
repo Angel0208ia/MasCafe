@@ -16,6 +16,6 @@ as $$
   order by sum(i.quantity) desc, i.product_id
   limit 3;
 $$;
-revoke all on function public.get_weekly_best_sellers() from public;
-grant execute on function public.get_weekly_best_sellers() to anon, authenticated;
+revoke all on function public.get_weekly_best_sellers() from public, anon, authenticated;
+grant execute on function public.get_weekly_best_sellers() to anon;
 commit;

@@ -148,7 +148,8 @@ $$;
 
 alter table public.anonymous_clients enable row level security;
 revoke all on public.anonymous_clients from anon, authenticated;
-revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public;
-revoke all on function public.cancel_anonymous_order(uuid, uuid) from public;
-grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon, authenticated;
+revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public, anon, authenticated;
+revoke all on function public.cancel_anonymous_order(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon;
+grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon;
 

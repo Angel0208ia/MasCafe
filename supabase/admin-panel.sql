@@ -47,7 +47,7 @@ as $$
   );
 $$;
 
-revoke all on function public.is_staff(public.staff_role) from public;
+revoke all on function public.is_staff(public.staff_role) from public, anon, authenticated;
 grant execute on function public.is_staff(public.staff_role) to authenticated;
 
 drop policy if exists "El personal consulta su perfil" on public.staff_members;
@@ -94,6 +94,9 @@ begin
   return new;
 end;
 $$;
+
+alter function public.record_order_status_event() security invoker;
+revoke all on function public.record_order_status_event() from public, anon, authenticated;
 
 drop trigger if exists record_order_status_event on public.orders;
 create trigger record_order_status_event
@@ -151,7 +154,7 @@ begin
 end;
 $$;
 
-revoke all on function public.staff_update_order_status(uuid, public.order_status) from public;
+revoke all on function public.staff_update_order_status(uuid, public.order_status) from public, anon, authenticated;
 grant execute on function public.staff_update_order_status(uuid, public.order_status) to authenticated;
 
 -- Incorpora las horas reales del seguimiento a la consulta anónima del cliente.
@@ -198,7 +201,8 @@ as $$
   where orders.tracking_token = p_tracking_token;
 $$;
 
-grant execute on function public.get_anonymous_order(uuid) to anon, authenticated;
+revoke all on function public.get_anonymous_order(uuid) from public, anon, authenticated;
+grant execute on function public.get_anonymous_order(uuid) to anon;
 
 do $$
 begin
