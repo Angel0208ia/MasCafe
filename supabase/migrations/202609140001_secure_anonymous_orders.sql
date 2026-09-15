@@ -46,7 +46,8 @@ begin
   select max(orders.created_at)
   into v_last_order_at
   from public.orders
-  where orders.client_token = v_client_token;
+  where orders.client_token = v_client_token
+    and orders.status <> 'cancelled';
 
   if v_last_order_at is not null
     and v_last_order_at > now() - interval '30 minutes' then

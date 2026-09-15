@@ -5,7 +5,7 @@ import { stripTypeScriptTypes } from 'node:module';
 
 test('ranking comparte peticiones, conserva referencias y no consulta en cada refresco', async () => {
   const source = await readFile(new URL('../src/lib/bestSellersApi.ts', import.meta.url), 'utf8');
-  const mocked = source.replace("import { supabase } from './supabase';", `
+  const mocked = source.replace("import { getSupabaseClient } from './supabase';", `
     export let calls = 0;
     const supabase = { rpc(name) {
       if (name !== 'get_weekly_best_sellers') throw new Error('RPC incorrecta');
@@ -15,6 +15,7 @@ test('ranking comparte peticiones, conserva referencias y no consulta en cada re
         return { data: [{ product_id: '17', quantity: 19 }], error: null };
       } };
     } };
+    const getSupabaseClient = () => supabase;
   `);
   const code = stripTypeScriptTypes(mocked);
   const api = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
