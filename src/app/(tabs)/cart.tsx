@@ -3,6 +3,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import {
   FlatList,
+  Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -162,10 +164,27 @@ export default function CartScreen() {
     const campusLocation = await verifyCampusLocation();
     if (!campusLocation.success) {
       setIsCheckingLocation(false);
+      const canOpenSettings = Platform.OS !== 'web'
+        && (campusLocation.reason === 'permission-denied'
+          || campusLocation.reason === 'services-disabled');
       setDialog({
-        title: 'Ubicación necesaria',
+        title: campusLocation.reason === 'outside-campus'
+          ? 'Estás fuera del campus'
+          : campusLocation.reason === 'permission-denied'
+            || campusLocation.reason === 'services-disabled'
+            ? 'Activa tu ubicación'
+            : 'No pudimos validar tu ubicación',
         message: campusLocation.message,
         icon: 'location-outline',
+        actions: canOpenSettings
+          ? [
+              { label: 'Ahora no', variant: 'secondary' },
+              {
+                label: 'Abrir configuración',
+                onPress: () => { void Linking.openSettings(); },
+              },
+            ]
+          : undefined,
       });
       return;
     }

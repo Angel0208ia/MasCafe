@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { Platform } from 'react-native';
 import type { OrderLocation } from '../types/product';
 
 export const CAMPUS_NAME = 'Tecmilenio Campus Cancún';
@@ -93,6 +94,26 @@ async function getCurrentPositionWithTimeout(): Promise<Location.LocationObject>
   }
 }
 
+function getPermissionDeniedMessage(): string {
+  if (Platform.OS === 'web') {
+    return 'No podemos confirmar que estás dentro del campus porque el navegador no tiene acceso a tu ubicación. Haz clic en el icono de permisos o candado junto a la dirección, permite la ubicación para este sitio y vuelve a intentarlo.';
+  }
+
+  if (Platform.OS === 'ios') {
+    return 'No podemos confirmar que estás dentro del campus porque Más Café no tiene permiso de ubicación. Abre Configuración > Privacidad y seguridad > Localización > Más Café (o Expo Go), elige “Al usar la app” y activa “Ubicación precisa”.';
+  }
+
+  return 'No podemos confirmar que estás dentro del campus porque Más Café no tiene permiso de ubicación. Abre Ajustes > Aplicaciones > Más Café (o Expo Go) > Permisos > Ubicación y elige “Mientras se usa la app”.';
+}
+
+function getServicesDisabledMessage(): string {
+  if (Platform.OS === 'web') {
+    return 'La ubicación está desactivada en el navegador o en tu dispositivo. Actívala, permite la ubicación para este sitio desde el icono junto a la dirección y vuelve a intentarlo.';
+  }
+
+  return 'La ubicación de tu dispositivo está desactivada. Actívala desde los ajustes rápidos o Configuración para confirmar que estás dentro del campus.';
+}
+
 export async function verifyCampusLocation(): Promise<CampusLocationResult> {
   try {
     const servicesEnabled = await Location.hasServicesEnabledAsync();
@@ -100,7 +121,7 @@ export async function verifyCampusLocation(): Promise<CampusLocationResult> {
       return {
         success: false,
         reason: 'services-disabled',
-        message: 'Activa la ubicación de tu dispositivo para confirmar que estás dentro del campus.',
+        message: getServicesDisabledMessage(),
       };
     }
 
@@ -110,7 +131,7 @@ export async function verifyCampusLocation(): Promise<CampusLocationResult> {
       return {
         success: false,
         reason: 'permission-denied',
-        message: 'Necesitamos permiso de ubicación mientras usas la app para permitir pedidos dentro del campus.',
+        message: getPermissionDeniedMessage(),
       };
     }
 
@@ -123,28 +144,29 @@ export async function verifyCampusLocation(): Promise<CampusLocationResult> {
       };
     }
 
+    const coordinates = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    };
+
+    if (!isInsideTecmilenioCancun(coordinates)) {
+      return {
+        success: false,
+        reason: 'outside-campus',
+        message: `Tu ubicación actual está fuera de ${CAMPUS_NAME}. Solo puedes generar pedidos cuando te encuentres dentro del plantel.`,
+      };
+    }
+
     const accuracy = position.coords.accuracy;
     if (accuracy === null || accuracy > MAX_LOCATION_ACCURACY_METERS) {
       return {
         success: false,
         reason: 'low-accuracy',
-        message: 'La ubicación no tiene suficiente precisión. Acércate a una ventana o activa la ubicación precisa e inténtalo nuevamente.',
+        message: 'Parece que estás cerca o dentro del campus, pero la ubicación no tiene suficiente precisión para autorizar el pedido. Activa la ubicación precisa y vuelve a intentarlo.',
       };
     }
 
-    const location: OrderLocation = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      accuracy,
-    };
-
-    if (!isInsideTecmilenioCancun(location)) {
-      return {
-        success: false,
-        reason: 'outside-campus',
-        message: `Debes encontrarte dentro de ${CAMPUS_NAME} para realizar pedidos.`,
-      };
-    }
+    const location: OrderLocation = { ...coordinates, accuracy };
 
     return { success: true, location };
   } catch {
