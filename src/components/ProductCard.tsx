@@ -19,16 +19,17 @@ type ProductCardProps = {
 };
 
 function ProductCard({ product, onPress, style }: ProductCardProps) {
+  const canOrder = product.available && product.active !== false;
   const hasPriceOptions = product.customizations?.some((group) =>
     group.options.some((option) => option.extraPrice > 0)
   );
 
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed, !product.available && styles.unavailable]}
+      style={({ pressed }) => [styles.card, style, pressed && styles.cardPressed, !canOrder && styles.unavailable]}
       onPress={() => onPress(product.id)}
       accessibilityRole="button"
-      accessibilityLabel={product.available ? `Personalizar ${product.name}` : `${product.name}, artículo no disponible`}
+      accessibilityLabel={canOrder ? `Personalizar ${product.name}` : `${product.name}, artículo no disponible`}
     >
       <ProductImage uri={product.image} name={product.name} style={styles.image} />
 
@@ -46,9 +47,9 @@ function ProductCard({ product, onPress, style }: ProductCardProps) {
           </Text>
           <View style={styles.chooseButton}>
             <Text style={styles.chooseText}>
-              {product.available ? 'Elegir' : 'Agotado'}
+              {canOrder ? 'Elegir' : 'Agotado'}
             </Text>
-            {product.available && (
+            {canOrder && (
               <Ionicons name="chevron-forward" size={15} color={colors.onPrimary} />
             )}
           </View>

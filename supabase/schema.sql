@@ -21,6 +21,7 @@ create table public.products (
   image text not null default '',
   category text not null,
   base_price numeric(10, 2) not null check (base_price >= 0),
+  active boolean not null default true,
   available boolean not null default true,
   customizations jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
@@ -50,11 +51,20 @@ create table public.orders (
   updated_at timestamptz not null default now()
 );
 
+create table public.business_settings (
+  id smallint primary key default 1 check (id = 1),
+  is_open boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.business_settings (id, is_open) values (1, true);
+
 create table public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
   product_id text not null,
   product_name text not null,
+  image text not null default '',
   quantity integer not null check (quantity between 1 and 3),
   unit_price numeric(10, 2) not null check (unit_price >= 0),
   selections jsonb not null default '[]'::jsonb,
@@ -203,7 +213,7 @@ begin
   loop
     select * into v_product
     from public.products
-    where id = v_item ->> 'productId' and available = true;
+    where id = v_item ->> 'productId' and active = true and available = true;
 
     if not found then
       raise exception 'Uno de los productos ya no está disponible';
@@ -217,11 +227,12 @@ begin
     );
 
     insert into public.order_items (
-      order_id, product_id, product_name, quantity, unit_price, selections, notes
+      order_id, product_id, product_name, image, quantity, unit_price, selections, notes
     ) values (
       v_order_id,
       v_product.id,
       v_product.name,
+      v_product.image,
       v_quantity,
       v_unit_price,
       coalesce(v_item -> 'selections', '[]'::jsonb),
@@ -284,6 +295,7 @@ as $$
         select jsonb_agg(jsonb_build_object(
           'productId', order_items.product_id,
           'name', order_items.product_name,
+          'image', order_items.image,
           'quantity', order_items.quantity,
           'unitPrice', order_items.unit_price,
           'selections', order_items.selections,
@@ -303,6 +315,7 @@ $$;
 alter table public.products enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
+alter table public.business_settings enable row level security;
 
 create policy "El menú es público"
   on public.products for select
@@ -315,9 +328,63 @@ grant select on public.products to anon, authenticated;
 revoke all on function public.create_anonymous_order(jsonb) from public, anon, authenticated;
 grant execute on function public.get_anonymous_order(uuid) to anon;
 
+create or replace function public.is_within_tecmilenio_cancun(
+  p_latitude double precision,
+  p_longitude double precision
+)
+returns boolean
+language plpgsql
+immutable
+security invoker
+set search_path = public
+as $$
+declare
+  v_latitudes double precision[] := array[
+    21.1317622, 21.1313783, 21.1309755, 21.1325966,
+    21.1328423, 21.1331620, 21.1332158, 21.1331615,
+    21.1330111, 21.1327260, 21.1327003, 21.1326576
+  ];
+  v_longitudes double precision[] := array[
+    -86.8272884, -86.8266301, -86.8259394, -86.8251115,
+    -86.8256702, -86.8263781, -86.8265071, -86.8265349,
+    -86.8266155, -86.8267682, -86.8267819, -86.8268050
+  ];
+  v_inside boolean := false;
+  v_current integer;
+  v_previous integer := array_length(v_latitudes, 1);
+  v_crossing_longitude double precision;
+begin
+  if p_latitude is null or p_longitude is null then return false; end if;
+  if p_latitude < 21.1309755 or p_latitude > 21.1332158
+    or p_longitude < -86.8272884 or p_longitude > -86.8251115 then
+    return false;
+  end if;
+
+  for v_current in 1..array_length(v_latitudes, 1) loop
+    if (v_latitudes[v_current] > p_latitude) <> (v_latitudes[v_previous] > p_latitude) then
+      v_crossing_longitude :=
+        (v_longitudes[v_previous] - v_longitudes[v_current])
+        * (p_latitude - v_latitudes[v_current])
+        / (v_latitudes[v_previous] - v_latitudes[v_current])
+        + v_longitudes[v_current];
+      if p_longitude < v_crossing_longitude then v_inside := not v_inside; end if;
+    end if;
+    v_previous := v_current;
+  end loop;
+
+  return v_inside;
+end;
+$$;
+
+revoke all on function public.is_within_tecmilenio_cancun(double precision, double precision)
+  from public, anon, authenticated;
+
 create or replace function public.create_anonymous_order_with_client(
   p_items jsonb,
-  p_client_token uuid default null
+  p_client_token uuid,
+  p_latitude double precision,
+  p_longitude double precision,
+  p_accuracy double precision
 )
 returns table (
   order_id uuid,
@@ -337,6 +404,14 @@ declare
   v_last_order_at timestamptz;
   v_created record;
 begin
+  if p_accuracy is null or p_accuracy < 0 or p_accuracy > 100 then
+    raise exception 'La ubicación no tiene suficiente precisión para generar el pedido';
+  end if;
+
+  if not public.is_within_tecmilenio_cancun(p_latitude, p_longitude) then
+    raise exception 'Debes encontrarte dentro de Tecmilenio Campus Cancún para realizar pedidos';
+  end if;
+
   insert into public.anonymous_clients (client_token)
   values (v_client_token)
   on conflict (client_token) do nothing;
@@ -459,7 +534,42 @@ $$;
 
 alter table public.anonymous_clients enable row level security;
 revoke all on public.anonymous_clients from anon, authenticated;
-revoke all on function public.create_anonymous_order_with_client(jsonb, uuid) from public, anon, authenticated;
+revoke all on function public.create_anonymous_order_with_client(
+  jsonb, uuid, double precision, double precision, double precision
+) from public, anon, authenticated;
 revoke all on function public.cancel_anonymous_order(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.create_anonymous_order_with_client(jsonb, uuid) to anon;
+grant execute on function public.create_anonymous_order_with_client(
+  jsonb, uuid, double precision, double precision, double precision
+) to anon;
 grant execute on function public.cancel_anonymous_order(uuid, uuid) to anon;
+
+create or replace function public.get_cafeteria_open_status()
+returns boolean language sql stable security definer set search_path = public
+as $$ select is_open from public.business_settings where id = 1 $$;
+revoke all on function public.get_cafeteria_open_status() from public;
+grant execute on function public.get_cafeteria_open_status() to anon, authenticated;
+
+create or replace function public.prevent_orders_when_closed()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if not coalesce((select is_open from public.business_settings where id = 1), true) then
+    raise exception 'La cafetería no está recibiendo pedidos en este momento';
+  end if;
+  return new;
+end;
+$$;
+create trigger orders_require_open_cafeteria before insert on public.orders
+for each row execute function public.prevent_orders_when_closed();
+
+create or replace function public.broadcast_anonymous_order_status()
+returns trigger language plpgsql security definer set search_path = public, realtime as $$
+begin
+  if new.status is distinct from old.status then
+    perform realtime.send(jsonb_build_object('orderId', new.id, 'status', new.status),
+      'order-status', 'order:' || new.tracking_token::text, false);
+  end if;
+  return new;
+end;
+$$;
+create trigger broadcast_anonymous_order_status after update of status on public.orders
+for each row execute function public.broadcast_anonymous_order_status();

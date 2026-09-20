@@ -161,6 +161,7 @@ export async function saveMenuProduct(form: FormData) {
       description: text(form, "description", 1500),
       category: text(form, "category", 80, true),
       base_price: price(text(form, "price", 20, true)),
+      active: form.get("active") === "true",
       available: form.get("available") === "true",
       customizations: groups(text(form, "customizations", 60000, true)),
       updated_at: new Date().toISOString(),

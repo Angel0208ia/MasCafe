@@ -13,6 +13,8 @@ Todos los importes se manejan en **pesos mexicanos (MXN)**. El sistema registra 
 - Notas especiales, cantidades y edición de opciones desde el carrito.
 - Promociones por día, aplicadas al combinar los artículos correspondientes.
 - Historial, detalle del pedido y seguimiento de su estado.
+- Aviso del sistema cuando un pedido pasa a **Listo**, con acceso al detalle. La aplicación solicita permiso al generar el primer pedido.
+- Validación de ubicación al generar el pedido: únicamente se aceptan solicitudes dentro de Tecmilenio Campus Cancún y con precisión suficiente.
 - “Pedir de nuevo”, validando productos disponibles, promociones y capacidad del carrito.
 - Cancelación mientras el pedido esté en **Recibido**.
 - Imágenes con caché y alternativa visual cuando no hay fotografía.
@@ -81,8 +83,10 @@ Para una **base nueva**, ejecutar en el SQL Editor en este orden:
 6. [`supabase/promotions-management.sql`](supabase/promotions-management.sql): administración de promociones.
 7. [`supabase/weekly-best-sellers.sql`](supabase/weekly-best-sellers.sql): ranking semanal mostrado cuando no hay promociones vigentes.
 8. [`supabase/migrations/202609150001_harden_function_privileges.sql`](supabase/migrations/202609150001_harden_function_privileges.sql): permisos mínimos de funciones públicas.
+9. [`supabase/migrations/202609170001_complete_mvp_checklist.sql`](supabase/migrations/202609170001_complete_mvp_checklist.sql): cafetería abierta/cerrada, productos activos, instantáneas de imágenes y actualizaciones de pedidos en tiempo real.
+10. [`supabase/migrations/202609200001_enforce_campus_geofence.sql`](supabase/migrations/202609200001_enforce_campus_geofence.sql): exige una ubicación válida dentro del perímetro de Tecmilenio Campus Cancún antes de crear pedidos.
 
-Para una base existente, aplicar solo los archivos incrementales que falten y revisar las migraciones ya ejecutadas. No volver a ejecutar el seed: sobrescribe modificaciones. La app cliente actualiza el catálogo al volver a cargarlo, con caché de hasta 60 segundos; los pedidos históricos conservan sus productos y precios originales aunque se elimine un artículo.
+Para una base existente, aplicar solo los archivos incrementales que falten y revisar las migraciones ya ejecutadas, incluida `202609170001_complete_mvp_checklist.sql` después de `admin-panel.sql`. No volver a ejecutar el seed: sobrescribe modificaciones. La app cliente actualiza el catálogo al volver a cargarlo, con caché de hasta 60 segundos; los pedidos históricos conservan sus productos, precios e imágenes originales aunque se elimine un artículo.
 
 **No ejecutar otra vez `schema.sql` sobre una base existente**: contiene creación de tablas y tipos, no es una migración incremental. Revisar los cambios necesarios antes de aplicar `apply-promotions.sql` o `customer-cancellations.sql`. El seed actualiza productos y puede sobrescribir cambios del catálogo.
 
@@ -109,6 +113,10 @@ npm start
 ```
 
 Escanear el QR con Expo Go; teléfono y computadora deben poder comunicarse por la red. En la terminal, `a` abre Android y `w` abre web.
+
+Las notificaciones locales de pedidos usan `expo-notifications`. Android e iOS necesitan una nueva compilación de desarrollo o producción después de agregar el plugin nativo. En web se usa la API de notificaciones del navegador. Estos avisos se generan cuando la aplicación abierta recibe el cambio por Realtime o cuando recupera un pedido listo al volver a abrirse; las notificaciones con la aplicación completamente cerrada requieren configurar push remoto, credenciales APNs/FCM y, para web, un service worker con Web Push.
+
+La ubicación se solicita al pulsar **Generar pedido**. El cliente comprueba el perímetro del campus y Supabase repite la validación antes de crear el pedido; las coordenadas se usan para esta comprobación y no se guardan. En web, la ubicación requiere `https` o `localhost`. Android e iOS necesitan una nueva compilación después de agregar `expo-location` y su texto de permiso nativo.
 
 Dirección habitual del cliente web: [http://localhost:8081](http://localhost:8081). Expo puede ofrecer otro puerto si está ocupado.
 

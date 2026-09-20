@@ -20,6 +20,9 @@ import {
 } from '@/store/productsStore';
 import type { CartItem } from '@/types/product';
 import { getOrderCooldownUntil } from '@/lib/orderCooldown';
+import { requestCustomerNotificationPermission } from '../../lib/customerNotifications';
+import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
+import { CAMPUS_NAME, verifyCampusLocation } from '@/lib/campusLocation';
 
 type DialogState = {
   title: string;
@@ -121,8 +124,11 @@ export default function CartScreen() {
   const placeOrder = useProductsStore((state) => state.placeOrder);
   const loadMenu = useProductsStore((state) => state.loadMenu);
   const isSubmittingOrder = useProductsStore((state) => state.isSubmittingOrder);
+  const isCafeteriaOpen = useProductsStore((state) => state.isCafeteriaOpen);
+  const loadCafeteriaStatus = useProductsStore((state) => state.loadCafeteriaStatus);
   const [now, setNow] = useState(INITIAL_TIME);
   const [dialog, setDialog] = useState<DialogState | null>(null);
+  const [isCheckingLocation, setIsCheckingLocation] = useState(false);
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const pricing = getCartPricing(cart, new Date(now));
   const regularCooldownRemainingMs = Math.max(0, nextOrderAt - now);
@@ -131,9 +137,12 @@ export default function CartScreen() {
   const isCancellationBlocked = cancellationBlockRemainingMs > 0;
   const horizontalPadding = getScreenPadding(width);
 
+  useForegroundRefresh(loadCafeteriaStatus, 5000);
+
   useFocusEffect(useCallback(() => {
     setNow(Date.now());
     void loadMenu(true);
+    void loadCafeteriaStatus();
     const restrictionUntil = Math.max(
       nextOrderAt,
       orderingBlockedUntil
@@ -146,10 +155,24 @@ export default function CartScreen() {
       if (currentTime >= restrictionUntil) clearInterval(timer);
     }, 1000);
     return () => clearInterval(timer);
-  }, [nextOrderAt, orderingBlockedUntil, loadMenu]));
+  }, [nextOrderAt, orderingBlockedUntil, loadCafeteriaStatus, loadMenu]));
 
   const submitOrder = async () => {
-    const result = await placeOrder();
+    setIsCheckingLocation(true);
+    const campusLocation = await verifyCampusLocation();
+    if (!campusLocation.success) {
+      setIsCheckingLocation(false);
+      setDialog({
+        title: 'Ubicación necesaria',
+        message: campusLocation.message,
+        icon: 'location-outline',
+      });
+      return;
+    }
+
+    await requestCustomerNotificationPermission();
+    const result = await placeOrder(campusLocation.location);
+    setIsCheckingLocation(false);
 
     if (!result.success) {
       const message = result.reason === 'cooldown' || result.reason === 'blocked'
@@ -273,14 +296,25 @@ export default function CartScreen() {
                 <Text style={styles.totalLabel}>Total</Text>
                 <Text style={styles.total}>${pricing.total.toFixed(2)}</Text>
               </View>
+              <View style={styles.locationNotice}>
+                <Ionicons name="location" size={18} color={colors.primary} />
+                <Text style={styles.locationText}>
+                  Solo puedes generar pedidos dentro de {CAMPUS_NAME}. Verificaremos tu ubicación al continuar.
+                </Text>
+              </View>
+              {!isCafeteriaOpen && <View style={styles.closedNotice}><Ionicons name="time-outline" size={17} color={colors.danger} /><Text style={styles.closedText}>La cafetería no está recibiendo pedidos en este momento.</Text></View>}
               <Pressable
-                style={[styles.orderButton, (remainingMs > 0 || isSubmittingOrder) && styles.orderButtonDisabled]}
+                style={[styles.orderButton, (remainingMs > 0 || isSubmittingOrder || isCheckingLocation || !isCafeteriaOpen) && styles.orderButtonDisabled]}
                 onPress={submitOrder}
-                disabled={remainingMs > 0 || isSubmittingOrder}
+                disabled={remainingMs > 0 || isSubmittingOrder || isCheckingLocation || !isCafeteriaOpen}
               >
                 <Text style={styles.orderButtonText}>
-                  {isSubmittingOrder
+                  {isCheckingLocation
+                    ? 'Verificando ubicación...'
+                    : isSubmittingOrder
                     ? 'Generando pedido...'
+                    : !isCafeteriaOpen
+                    ? 'Cafetería cerrada'
                     : remainingMs > 0
                     ? isCancellationBlocked
                       ? `Bloqueado por ${formatRemainingTime(remainingMs)}`
@@ -326,6 +360,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', color: colors.text },
   subtitle: { marginTop: spacing.xs, fontSize: font.small, color: colors.muted },
   clearText: { fontSize: font.small, fontWeight: '700', color: colors.danger },
+  closedNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.md, padding: spacing.sm, borderRadius: radius.sm, backgroundColor: '#FBE9E7' },
+  closedText: { flex: 1, fontSize: font.tiny, lineHeight: 18, color: colors.danger },
+  locationNotice: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md, padding: spacing.md, borderRadius: radius.sm, backgroundColor: colors.thumb },
+  locationText: { flex: 1, fontSize: font.tiny, lineHeight: 18, color: colors.primary },
   card: {
     flexDirection: 'row',
     alignItems: 'flex-start',

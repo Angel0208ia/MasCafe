@@ -1,0 +1,125 @@
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import type { Order } from '../types/product';
+import { readStorageItem, writeStorageItem } from './storageAccess';
+
+const READY_CHANNEL = 'orders';
+const NOTIFIED_ORDERS_KEY = 'mascafe-ready-notified-orders';
+
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
+
+function getNotifiedOrderIds(): Set<string> {
+  try {
+    const value: unknown = JSON.parse(readStorageItem(NOTIFIED_ORDERS_KEY) ?? '[]');
+    return new Set(Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function markOrderNotified(orderId: string): void {
+  const ids = getNotifiedOrderIds();
+  ids.add(orderId);
+  writeStorageItem(NOTIFIED_ORDERS_KEY, JSON.stringify([...ids].slice(-50)));
+}
+
+async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(READY_CHANNEL, {
+    name: 'Estado de pedidos',
+    description: 'Avisos cuando tu pedido está listo para recoger.',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 150, 250],
+    lightColor: '#432417',
+    sound: 'default',
+  });
+}
+
+export async function initializeCustomerNotifications(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    await ensureAndroidChannel();
+  } catch {
+    // El seguimiento del pedido continúa aunque el sistema no permita configurar avisos.
+  }
+}
+
+export async function requestCustomerNotificationPermission(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    if (typeof Notification === 'undefined') return false;
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') return false;
+    return (await Notification.requestPermission()) === 'granted';
+  }
+
+  try {
+    await ensureAndroidChannel();
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return true;
+    const requested = await Notifications.requestPermissionsAsync();
+    return requested.granted;
+  } catch {
+    return false;
+  }
+}
+
+async function notifyOnWeb(order: Order): Promise<boolean> {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return false;
+  try {
+    const notification = new Notification('¡Tu pedido está listo!', {
+      body: `Tu pedido ${order.number} ya está listo. Puedes pasar por él a la cafetería.`,
+      tag: `mascafe-order-ready-${order.id}`,
+    });
+    notification.onclick = () => {
+      window.focus();
+      window.location.assign(`/orders/${order.id}`);
+      notification.close();
+    };
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function notifyOnNative(order: Order): Promise<boolean> {
+  try {
+    const permission = await Notifications.getPermissionsAsync();
+    if (!permission.granted) return false;
+    await ensureAndroidChannel();
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '¡Tu pedido está listo!',
+        body: `Tu pedido ${order.number} ya está listo. Puedes pasar por él a la cafetería.`,
+        sound: 'default',
+        data: { orderId: order.id, url: `/orders/${order.id}` },
+      },
+      trigger: Platform.OS === 'android'
+        ? {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: 1,
+            channelId: READY_CHANNEL,
+          }
+        : null,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function notifyOrderReady(order: Order): Promise<void> {
+  if (getNotifiedOrderIds().has(order.id)) return;
+  const notified = Platform.OS === 'web'
+    ? await notifyOnWeb(order)
+    : await notifyOnNative(order);
+  if (notified) markOrderNotified(order.id);
+}

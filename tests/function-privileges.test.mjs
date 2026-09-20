@@ -21,3 +21,14 @@ test('la migración publica solo los RPC mínimos para cada rol', async () => {
   assert.match(sql, /record_order_status_event\(\) security invoker;/i);
   assert.match(sql, /revoke execute on functions from public;/i);
 });
+
+test('la migración del checklist protege el estado de la cafetería y publica solo su lectura', async () => {
+  const sql = await readFile(
+    new URL('../supabase/migrations/202609170001_complete_mvp_checklist.sql', import.meta.url),
+    'utf8',
+  );
+  assert.match(sql, /grant execute on function public\.get_cafeteria_open_status\(\) to anon, authenticated;/i);
+  assert.match(sql, /revoke all on function public\.staff_set_cafeteria_open\(boolean\) from public, anon;/i);
+  assert.match(sql, /orders_require_open_cafeteria/i);
+  assert.match(sql, /broadcast_anonymous_order_status/i);
+});

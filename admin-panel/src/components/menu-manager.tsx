@@ -425,6 +425,7 @@ function ProductEditor({
     const data = new FormData(event.currentTarget);
     data.set("id", product?.id ?? "");
     data.set("updated_at", product?.updated_at ?? "");
+    data.set("active", data.get("active") === "on" ? "true" : "false");
     data.set("available", data.get("available") === "on" ? "true" : "false");
     data.set("customizations", JSON.stringify(groups));
     data.set("removeImage", String(removeImage));
@@ -485,6 +486,14 @@ function ProductEditor({
                 required
                 defaultValue={product?.base_price}
               />
+            </label>
+            <label className={styles.checkbox}>
+              <input
+                type="checkbox"
+                name="active"
+                defaultChecked={product?.active ?? true}
+              />
+              Activo para nuevas órdenes
             </label>
             <label className={styles.checkbox}>
               <input

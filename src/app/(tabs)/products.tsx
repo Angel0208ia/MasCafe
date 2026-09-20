@@ -72,7 +72,7 @@ export default function ProductsScreen() {
   const openProduct = useCallback(
     (id: string) => {
       const product = useProductsStore.getState().products.find(p => p.id === id);
-      if (!product?.available) { setUnavailableName(product?.name ?? 'Este artículo'); return; }
+      if (!product?.available || product.active === false) { setUnavailableName(product?.name ?? 'Este artículo'); return; }
       router.push(`/products/${id}`);
     },
     [router]

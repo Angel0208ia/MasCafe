@@ -14,6 +14,7 @@ export type MenuProduct = {
   image: string;
   category: string;
   base_price: number | string;
+  active: boolean;
   available: boolean;
   customizations: MenuGroup[];
   updated_at: string;

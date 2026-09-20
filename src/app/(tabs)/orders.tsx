@@ -66,7 +66,12 @@ function OrderCard({
       >
         <View style={styles.orderHeader}>
           <View style={styles.orderIdentity}>
-            <Text style={styles.orderNumber}>{order.number}</Text>
+            <View style={styles.orderNumberRow}>
+              <Text style={styles.orderNumberLabel}>Número de pedido</Text>
+              <View style={styles.orderNumberBadge}>
+                <Text style={styles.orderNumber}>{order.number}</Text>
+              </View>
+            </View>
             <Text style={styles.orderDate}>{formatOrderDate(order.createdAt)}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: tone.background }]}>
@@ -284,7 +289,17 @@ const styles = StyleSheet.create({
   orderCardPressed: { opacity: 0.78 },
   orderHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   orderIdentity: { flex: 1, marginRight: spacing.sm },
-  orderNumber: { fontSize: font.body, fontWeight: '800', color: colors.text },
+  orderNumberRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.xs },
+  orderNumberLabel: { fontSize: font.tiny, fontWeight: '700', color: colors.text },
+  orderNumberBadge: {
+    minWidth: 34,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.thumb,
+  },
+  orderNumber: { fontSize: font.small, fontWeight: '800', color: colors.primary },
   orderDate: { marginTop: 3, fontSize: font.tiny, color: colors.muted },
   statusBadge: {
     flexDirection: 'row',

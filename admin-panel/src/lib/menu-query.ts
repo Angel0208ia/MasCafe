@@ -10,7 +10,7 @@ export async function loadMenuCatalog(): Promise<MenuProduct[]> {
     const products: MenuProduct[] = [];
     for (let offset = 0; ; offset += 500) {
       const { data, error } = await db.from('products')
-        .select('id,name,description,image,category,base_price,available,customizations,updated_at')
+        .select('id,name,description,image,category,base_price,active,available,customizations,updated_at')
         .order('id').range(offset, offset + 499).abortSignal(controller.signal);
       if (error) throw new Error('No se pudo cargar el menú. Intenta actualizar nuevamente.');
       products.push(...data as MenuProduct[]);

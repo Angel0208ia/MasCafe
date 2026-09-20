@@ -9,3 +9,19 @@ export function readStorageItem(key: string): string | null {
     return null;
   }
 }
+
+export function writeStorageItem(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+  } catch {
+    // La aplicación sigue funcionando si el almacenamiento está bloqueado.
+  }
+}
+
+export function removeStorageItem(key: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
+  } catch {
+    // La aplicación sigue funcionando si el almacenamiento está bloqueado.
+  }
+}

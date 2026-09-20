@@ -6,6 +6,7 @@ import type {
   CancelOrderResult,
   NewCartItem,
   Order,
+  OrderLocation,
   PlaceOrderResult,
   Product,
   SelectedCustomization,
@@ -23,6 +24,11 @@ import { PROMOTIONS, getCartPricing, getPromotionById, isPromotionActive, type P
 import { refreshPromotions } from '../lib/promotionsApi';
 import { getProductImage } from '../constants/productImages';
 import { getOrderCooldownUntil } from '../lib/orderCooldown';
+import { fetchCafeteriaOpenStatus } from '../lib/businessApi';
+import { refreshOrderUpdateSubscriptions } from '../lib/orderUpdates';
+import { notifyOrderReady } from '../lib/customerNotifications';
+import { getNewlyReadyOrders } from '../lib/readyNotifications';
+import { readStorageItem, writeStorageItem } from '../lib/storageAccess';
 export { ORDER_COOLDOWN_MS } from '../lib/orderCooldown';
 
 export type { CartItem, Product } from '../types/product';
@@ -31,6 +37,7 @@ export const ALL_CATEGORIES = 'Todos';
 export const MAX_ITEMS_PER_ORDER = 3;
 export const CANCELLATION_BLOCK_MS = 2 * 60 * 60 * 1000;
 const MENU_CACHE_MS = 60_000;
+const CART_STORAGE_KEY = 'mascafe-cart';
 let previousMenuResponse: Product[] | undefined;
 let localOrdersRevision = 0;
 
@@ -41,8 +48,18 @@ export type CategoryOption = {
 
 const initialProducts = (productsData as Product[]).map((product) => ({
   ...product,
+  active: product.active ?? true,
   image: getProductImage(product.id, product.image),
 }));
+
+function loadCart(): CartItem[] {
+  try {
+    const value: unknown = JSON.parse(readStorageItem(CART_STORAGE_KEY) ?? '[]');
+    return Array.isArray(value) ? value as CartItem[] : [];
+  } catch {
+    return [];
+  }
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   Licuados: 'Licuados',
@@ -124,6 +141,7 @@ type ProductsState = {
   selectedCategory: string;
   cart: CartItem[];
   orders: Order[];
+  isCafeteriaOpen: boolean;
   orderingBlockedUntil: number;
   isSubmittingOrder: boolean;
   isCancellingOrder: boolean;
@@ -138,10 +156,11 @@ type ProductsState = {
   decreaseQuantity: (cartItemId: string) => void;
   removeFromCart: (cartItemId: string) => void;
   clearCart: () => void;
-  placeOrder: () => Promise<PlaceOrderResult>;
+  placeOrder: (location: OrderLocation) => Promise<PlaceOrderResult>;
   cancelOrder: (orderId: string) => Promise<CancelOrderResult>;
   loadMenu: (force?: boolean) => Promise<void>;
   loadTrackedOrders: () => Promise<void>;
+  loadCafeteriaStatus: () => Promise<void>;
   getProductById: (id: string) => Product | undefined;
   getFilteredProducts: () => Product[];
 };
@@ -150,8 +169,9 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   promotions: PROMOTIONS,
   products: initialProducts,
   selectedCategory: ALL_CATEGORIES,
-  cart: [],
+  cart: loadCart(),
   orders: [],
+  isCafeteriaOpen: true,
   orderingBlockedUntil: getOrderingBlockedUntil(),
   isSubmittingOrder: false,
   isCancellingOrder: false,
@@ -161,7 +181,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   setCategory: (category) => set({ selectedCategory: category }),
 
   addToCart: (item) => {
-    if (!get().products.find(product => product.id === item.productId)?.available) {
+    if (!get().products.find(product => product.id === item.productId && product.active !== false)?.available) {
       return { success: false, message: 'Artículo no disponible por el momento.' };
     }
     const cartQuantity = getCartQuantity(get().cart);
@@ -210,7 +230,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
     for (const requirement of promotion.requirements) {
       const product = state.products.find((item) => item.id === requirement.productId);
-      if (!product?.available) {
+      if (!product?.available || product.active === false) {
         return {
           success: false,
           message: 'Uno de los productos de la promoción no está disponible.',
@@ -276,7 +296,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     const repeatedItems: CartItem[] = [];
     for (const previousItem of order.items) {
       const product = state.products.find((item) => item.id === previousItem.productId);
-      if (!product?.available) {
+      if (!product?.available || product.active === false) {
         return {
           success: false,
           message: `${previousItem.name} ya no está disponible.`,
@@ -362,7 +382,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
   clearCart: () => set({ cart: [] }),
 
-  placeOrder: async () => {
+  placeOrder: async (location) => {
     const state = get();
 
     if (state.cart.length === 0) {
@@ -371,6 +391,10 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
 
     if (state.isSubmittingOrder) {
       return { success: false, reason: 'busy', remainingMs: 0 };
+    }
+
+    if (!state.isCafeteriaOpen) {
+      return { success: false, reason: 'network', remainingMs: 0, message: 'La cafetería no está recibiendo pedidos en este momento.' };
     }
 
     const now = Date.now();
@@ -396,7 +420,8 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
     set({ isSubmittingOrder: true });
 
     try {
-      const order = await createAnonymousOrder(state.cart);
+      const order = await createAnonymousOrder(state.cart, location);
+      refreshOrderUpdateSubscriptions();
       localOrdersRevision++;
       set((current) => ({
         orders: [order, ...current.orders.filter((item) => item.id !== order.id)],
@@ -482,17 +507,31 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   loadTrackedOrders: singleFlight(async () => {
     try {
       const revision = localOrdersRevision;
+      const previousOrders = get().orders;
       const orders = await fetchTrackedOrders();
       // Una respuesta anterior no debe sobrescribir un pedido recién creado/cancelado.
       if (revision !== localOrdersRevision) return;
       set(state => ({ orders: JSON.stringify(state.orders) === JSON.stringify(orders) ? state.orders : orders }));
+      await Promise.all(getNewlyReadyOrders(previousOrders, orders).map(notifyOrderReady));
     } catch {
       // No se borra el estado visible si la red falla temporalmente.
     }
   }),
+
+  loadCafeteriaStatus: async () => {
+    try {
+      set({ isCafeteriaOpen: await fetchCafeteriaOpenStatus() });
+    } catch {
+      // Conserva el último estado conocido si se pierde la conexión.
+    }
+  },
 
   getProductById: (id) => get().products.find((product) => product.id === id),
 
   getFilteredProducts: () => filterByCategory(get().products, get().selectedCategory),
 
 }));
+
+useProductsStore.subscribe((state, previous) => {
+  if (state.cart !== previous.cart) writeStorageItem(CART_STORAGE_KEY, JSON.stringify(state.cart));
+});

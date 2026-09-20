@@ -31,7 +31,7 @@ export const ORDER_TIMELINE: readonly OrderTimelineStep[] = [
 
 export function getOrderStatusLabel(status: OrderStatus): string {
   const labels: Record<OrderStatus, string> = {
-    received: 'Recibido',
+    received: 'Generado',
     preparing: 'En preparación',
     ready: 'Listo para recoger',
     delivered: 'Entregado',
@@ -55,4 +55,3 @@ export function getOrderProgressIndex(status: OrderStatus): number {
   if (status === 'cancelled') return 0;
   return ORDER_TIMELINE.findIndex((step) => step.status === status);
 }
-

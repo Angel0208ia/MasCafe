@@ -1,11 +1,25 @@
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { colors } from '../constants/theme';
+import { initializeCustomerNotifications } from '../lib/customerNotifications';
+import { startOrderUpdateSubscription } from '../lib/orderUpdates';
+import { useProductsStore } from '../store/productsStore';
 
 export const unstable_settings = { anchor: '(tabs)' };
 
 export default function RootLayout() {
+  useEffect(() => {
+    const store = useProductsStore.getState();
+    void initializeCustomerNotifications();
+    void store.loadCafeteriaStatus();
+    void store.loadTrackedOrders();
+    return startOrderUpdateSubscription(() => {
+      void useProductsStore.getState().loadTrackedOrders();
+    });
+  }, []);
+
   const navigation = (
     <Stack
       screenOptions={{

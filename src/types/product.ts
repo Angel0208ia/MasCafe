@@ -23,6 +23,7 @@ export type Product = {
   description: string;
   image: string;
   price: number;
+  active?: boolean;
   available: boolean;
   category: string;
   customizations?: CustomizationGroup[];
@@ -69,6 +70,12 @@ export type OrderStatusEvent = {
 export type CartActionResult = {
   success: boolean;
   message?: string;
+};
+
+export type OrderLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
 };
 
 export type PlaceOrderResult =

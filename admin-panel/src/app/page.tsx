@@ -29,5 +29,6 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(100);
 
-  return <Dashboard initialOrders={(orders ?? []) as unknown as BusinessOrder[]} staffId={userId} staffName={staff.display_name} role={staff.role as StaffRole} />;
+  const { data: isOpen } = await supabase.rpc("get_cafeteria_open_status");
+  return <Dashboard initialOrders={(orders ?? []) as unknown as BusinessOrder[]} initialCafeteriaOpen={isOpen !== false} staffId={userId} staffName={staff.display_name} role={staff.role as StaffRole} />;
 }

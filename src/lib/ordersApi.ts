@@ -1,6 +1,7 @@
-import type { CancelOrderResult, CartItem, Order, OrderStatus, SelectedCustomization } from '../types/product';
+import type { CancelOrderResult, CartItem, Order, OrderLocation, OrderStatus, SelectedCustomization } from '../types/product';
+import * as Crypto from 'expo-crypto';
 import { getSupabaseClient } from './supabase';
-import { readStorageItem } from './storageAccess';
+import { readStorageItem, removeStorageItem, writeStorageItem } from './storageAccess';
 
 const TRACKING_TOKENS_KEY = 'mascafe-tracking-tokens';
 const TRACKED_ORDERS_KEY = 'mascafe-tracked-orders';
@@ -43,10 +44,11 @@ type RemoteOrder = {
     unitPrice: number | string;
     selections: SelectedCustomization[];
     notes: string;
+    image?: string;
   }[];
 };
 
-function getTrackingTokens(): string[] {
+export function getTrackingTokens(): string[] {
   try {
     const stored = readStorageItem(TRACKING_TOKENS_KEY);
     const tokens: unknown = stored ? JSON.parse(stored) : [];
@@ -60,7 +62,7 @@ function getTrackingTokens(): string[] {
 
 function saveTrackingToken(token: string): void {
   const tokens = [token, ...getTrackingTokens().filter((item) => item !== token)].slice(0, 10);
-  localStorage.setItem(TRACKING_TOKENS_KEY, JSON.stringify(tokens));
+  writeStorageItem(TRACKING_TOKENS_KEY, JSON.stringify(tokens));
 }
 
 function getTrackedOrderTokens(): Record<string, string> {
@@ -77,7 +79,7 @@ function getTrackedOrderTokens(): Record<string, string> {
 
 function saveTrackedOrderToken(orderId: string, trackingToken: string): void {
   const trackedOrders = getTrackedOrderTokens();
-  localStorage.setItem(TRACKED_ORDERS_KEY, JSON.stringify({
+  writeStorageItem(TRACKED_ORDERS_KEY, JSON.stringify({
     ...trackedOrders,
     [orderId]: trackingToken,
   }));
@@ -88,14 +90,22 @@ function getClientToken(): string | null {
 }
 
 function saveClientToken(token: string): void {
-  localStorage.setItem(CLIENT_TOKEN_KEY, token);
+  writeStorageItem(CLIENT_TOKEN_KEY, token);
+}
+
+function ensureClientToken(): string {
+  const stored = getClientToken();
+  if (stored) return stored;
+  const token = Crypto.randomUUID();
+  saveClientToken(token);
+  return token;
 }
 
 function saveOrderingBlockedUntil(timestamp: number): void {
   if (timestamp > Date.now()) {
-    localStorage.setItem(ORDERING_BLOCKED_UNTIL_KEY, String(timestamp));
+    writeStorageItem(ORDERING_BLOCKED_UNTIL_KEY, String(timestamp));
   } else {
-    localStorage.removeItem(ORDERING_BLOCKED_UNTIL_KEY);
+    removeStorageItem(ORDERING_BLOCKED_UNTIL_KEY);
   }
 }
 
@@ -119,7 +129,7 @@ function toOrder(order: RemoteOrder): Order {
       cartItemId: `${order.id}-${item.productId}`,
       productId: item.productId,
       name: item.name,
-      image: '',
+      image: item.image ?? '',
       quantity: Number(item.quantity),
       unitPrice: Number(item.unitPrice),
       selections: item.selections ?? [],
@@ -128,7 +138,7 @@ function toOrder(order: RemoteOrder): Order {
   };
 }
 
-export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
+export async function createAnonymousOrder(items: CartItem[], location: OrderLocation): Promise<Order> {
   const supabase = getSupabaseClient();
   const payload = items.map((item) => ({
     productId: item.productId,
@@ -139,7 +149,10 @@ export async function createAnonymousOrder(items: CartItem[]): Promise<Order> {
 
   const { data, error } = await supabase.rpc('create_anonymous_order_with_client', {
     p_items: payload,
-    p_client_token: getClientToken(),
+    p_client_token: ensureClientToken(),
+    p_latitude: location.latitude,
+    p_longitude: location.longitude,
+    p_accuracy: location.accuracy,
   });
   if (error) throw error;
 

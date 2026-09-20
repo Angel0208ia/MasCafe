@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Check, ChevronRight, CircleDot, ClipboardList, CookingPot, LayoutDashboard, LoaderCircle, LogOut, PackageCheck, RefreshCw, Search, ShoppingBag, Store, Tag, X } from "lucide-react";
 import { signOut } from "@/app/actions";
+import { setCafeteriaOpen } from "@/app/cafeteria-actions";
 import { createClient } from "@/lib/supabase/client";
 import type { BusinessOrder, OrderStatus, StaffRole } from "@/lib/types";
 import { PanelControls } from "./panel-controls";
@@ -65,7 +66,7 @@ function nextActionLabel(status: OrderStatus) {
   return "Pedido finalizado";
 }
 
-export function Dashboard({ initialOrders, staffId, staffName, role }: { initialOrders: BusinessOrder[]; staffId: string; staffName: string; role: StaffRole }) {
+export function Dashboard({ initialOrders, initialCafeteriaOpen, staffId, staffName, role }: { initialOrders: BusinessOrder[]; initialCafeteriaOpen: boolean; staffId: string; staffName: string; role: StaffRole }) {
   const [orders, setOrders] = useState(initialOrders);
   const [section, setSection] = useState<"operation" | "history" | "menu" | "promotions">("operation");
   const [menuVisited, setMenuVisited] = useState(false);
@@ -75,6 +76,26 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
   const [refreshing, setRefreshing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [notice, setNotice] = useState("");
+  const [cafeteriaOpen, setCafeteriaOpenState] = useState(initialCafeteriaOpen);
+  const [updatingCafeteria, setUpdatingCafeteria] = useState(false);
+
+  const toggleCafeteria = async () => {
+    const nextOpen = !cafeteriaOpen;
+    setUpdatingCafeteria(true);
+    try {
+      const result = await setCafeteriaOpen(nextOpen);
+      if (result.error) {
+        setNotice(result.error);
+      } else if (typeof result.isOpen === "boolean") {
+        setCafeteriaOpenState(result.isOpen);
+        setNotice(result.isOpen ? "La cafetería está abierta y recibe pedidos." : "La cafetería está cerrada y no recibe pedidos.");
+      }
+    } catch {
+      setNotice("No se pudo actualizar el estado de la cafetería.");
+    } finally {
+      setUpdatingCafeteria(false);
+    }
+  };
 
   const openNotifiedOrder = async (id: string) => {
     setSection("operation");
@@ -271,7 +292,7 @@ export function Dashboard({ initialOrders, staffId, staffName, role }: { initial
       </aside>
 
       <main className={styles.main}>
-        <header className={styles.topbar}><div><p>{displayDate}</p><h1>{section === "operation" ? "Operación de hoy" : section === "menu" ? "Menú del cliente" : section === 'promotions' ? 'Promociones del cliente' : "Historial de pedidos"}</h1></div><div className={styles.topActions}><span className={styles.live}><i />En vivo</span><PanelControls orders={orders} staffId={staffId} onOpenOrder={(id) => { void openNotifiedOrder(id); }} /></div></header>
+        <header className={styles.topbar}><div><p>{displayDate}</p><h1>{section === "operation" ? "Operación de hoy" : section === "menu" ? "Menú del cliente" : section === 'promotions' ? 'Promociones del cliente' : "Historial de pedidos"}</h1></div><div className={styles.topActions}><button type="button" className={`${styles.liveToggle} ${cafeteriaOpen ? styles.liveOpen : styles.liveClosed}`} disabled={updatingCafeteria} aria-pressed={cafeteriaOpen} aria-label={cafeteriaOpen ? "Cerrar la cafetería" : "Abrir la cafetería"} title={cafeteriaOpen ? "Haz clic para cerrar la cafetería" : "Haz clic para abrir la cafetería"} onClick={() => void toggleCafeteria()}><i />{updatingCafeteria ? 'Guardando…' : `En vivo · ${cafeteriaOpen ? 'Abierta' : 'Cerrada'}`}</button><PanelControls orders={orders} staffId={staffId} onOpenOrder={(id) => { void openNotifiedOrder(id); }} /></div></header>
 
         {menuVisited && <div hidden={section !== 'menu'}><MenuManager canEdit={role === "admin"} active={section === 'menu'} /></div>}
         {section === "promotions" ? <PromotionManager canEdit={role === 'admin'} /> : section === "history" ? <OrderHistory revision={orders} /> : section === "menu" ? null : <>

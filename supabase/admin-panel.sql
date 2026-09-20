@@ -157,6 +157,26 @@ $$;
 revoke all on function public.staff_update_order_status(uuid, public.order_status) from public, anon, authenticated;
 grant execute on function public.staff_update_order_status(uuid, public.order_status) to authenticated;
 
+create or replace function public.staff_set_cafeteria_open(p_is_open boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_staff() then
+    raise exception 'No autorizado';
+  end if;
+  update public.business_settings
+  set is_open = p_is_open, updated_at = now()
+  where id = 1;
+  return p_is_open;
+end;
+$$;
+
+revoke all on function public.staff_set_cafeteria_open(boolean) from public, anon;
+grant execute on function public.staff_set_cafeteria_open(boolean) to authenticated;
+
 -- Incorpora las horas reales del seguimiento a la consulta anónima del cliente.
 create or replace function public.get_anonymous_order(p_tracking_token uuid)
 returns jsonb

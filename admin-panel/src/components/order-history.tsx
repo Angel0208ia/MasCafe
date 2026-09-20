@@ -9,7 +9,7 @@ import styles from "./order-history.module.css";
 
 const PERIODS: ReportPeriod[] = ["day", "week", "month"];
 const STATUSES: Partial<Record<OrderStatus, string>> = {
-  received: "Recibido", preparing: "Preparando", ready: "Listo", delivered: "Entregado",
+  received: "Recibido", preparing: "Preparando", ready: "Listo", delivered: "Entregado", cancelled: "Cancelado",
 };
 const dateFormat = new Intl.DateTimeFormat("es-MX", {
   timeZone: "America/Cancun", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -42,7 +42,6 @@ export function OrderHistory({ revision }: { revision: BusinessOrder[] }) {
         for (let offset = 0; !controller.signal.aborted; offset += 500) {
           const { data, error: requestError } = await supabase.from("orders")
             .select("id, pickup_code, status, total, created_at, updated_at, order_items (id, product_id, product_name, quantity, unit_price, selections, notes)")
-            .neq("status", "cancelled")
             .gte("created_at", new Date(start).toISOString()).lt("created_at", new Date(end).toISOString())
             .order("created_at", { ascending: false }).order("id", { ascending: false })
             .range(offset, offset + 499).abortSignal(controller.signal);

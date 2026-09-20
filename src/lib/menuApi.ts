@@ -9,6 +9,7 @@ type ProductRow = {
   image: string;
   category: string;
   base_price: number | string;
+  active: boolean;
   available: boolean;
   customizations: CustomizationGroup[] | null;
 };
@@ -26,7 +27,7 @@ export async function fetchMenu(): Promise<Product[]> {
   if (cachedMenu && key === cachedRevision) return cachedMenu;
   const { data, error } = await supabase
     .from('products')
-    .select('id, name, description, image, category, base_price, available, customizations')
+    .select('id, name, description, image, category, base_price, active, available, customizations')
     .order('category')
     .order('name');
 
@@ -39,6 +40,7 @@ export async function fetchMenu(): Promise<Product[]> {
     image: getProductImage(product.id, product.image),
     category: product.category,
     price: Number(product.base_price),
+    active: product.active,
     available: product.available,
     customizations: product.customizations ?? [],
   }));
