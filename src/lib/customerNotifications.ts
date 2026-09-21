@@ -1,13 +1,29 @@
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import type { Order } from '../types/product';
 import { readStorageItem, writeStorageItem } from './storageAccess';
 
 const READY_CHANNEL = 'orders';
 const NOTIFIED_ORDERS_KEY = 'mascafe-ready-notified-orders';
+type ExpoNotifications = typeof import('expo-notifications');
+let notificationsPromise: Promise<ExpoNotifications | null> | null = null;
+let notificationHandlerConfigured = false;
 
-if (Platform.OS !== 'web') {
-  Notifications.setNotificationHandler({
+function supportsNativeNotifications(): boolean {
+  return Platform.OS !== 'web'
+    && !(Platform.OS === 'android'
+      && Constants.executionEnvironment === ExecutionEnvironment.StoreClient);
+}
+
+async function getNativeNotifications(): Promise<ExpoNotifications | null> {
+  if (!supportsNativeNotifications()) return null;
+  notificationsPromise ??= import('expo-notifications').catch(() => null);
+  return notificationsPromise;
+}
+
+function configureNotificationHandler(notifications: ExpoNotifications): void {
+  if (notificationHandlerConfigured) return;
+  notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldPlaySound: true,
       shouldSetBadge: false,
@@ -15,6 +31,7 @@ if (Platform.OS !== 'web') {
       shouldShowList: true,
     }),
   });
+  notificationHandlerConfigured = true;
 }
 
 function getNotifiedOrderIds(): Set<string> {
@@ -32,12 +49,12 @@ function markOrderNotified(orderId: string): void {
   writeStorageItem(NOTIFIED_ORDERS_KEY, JSON.stringify([...ids].slice(-50)));
 }
 
-async function ensureAndroidChannel(): Promise<void> {
+async function ensureAndroidChannel(notifications: ExpoNotifications): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync(READY_CHANNEL, {
+  await notifications.setNotificationChannelAsync(READY_CHANNEL, {
     name: 'Estado de pedidos',
     description: 'Avisos cuando tu pedido está listo para recoger.',
-    importance: Notifications.AndroidImportance.HIGH,
+    importance: notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 150, 250],
     lightColor: '#432417',
     sound: 'default',
@@ -47,7 +64,10 @@ async function ensureAndroidChannel(): Promise<void> {
 export async function initializeCustomerNotifications(): Promise<void> {
   if (Platform.OS === 'web') return;
   try {
-    await ensureAndroidChannel();
+    const notifications = await getNativeNotifications();
+    if (!notifications) return;
+    configureNotificationHandler(notifications);
+    await ensureAndroidChannel(notifications);
   } catch {
     // El seguimiento del pedido continúa aunque el sistema no permita configurar avisos.
   }
@@ -62,10 +82,13 @@ export async function requestCustomerNotificationPermission(): Promise<boolean> 
   }
 
   try {
-    await ensureAndroidChannel();
-    const current = await Notifications.getPermissionsAsync();
+    const notifications = await getNativeNotifications();
+    if (!notifications) return false;
+    configureNotificationHandler(notifications);
+    await ensureAndroidChannel(notifications);
+    const current = await notifications.getPermissionsAsync();
     if (current.granted) return true;
-    const requested = await Notifications.requestPermissionsAsync();
+    const requested = await notifications.requestPermissionsAsync();
     return requested.granted;
   } catch {
     return false;
@@ -92,10 +115,13 @@ async function notifyOnWeb(order: Order): Promise<boolean> {
 
 async function notifyOnNative(order: Order): Promise<boolean> {
   try {
-    const permission = await Notifications.getPermissionsAsync();
+    const notifications = await getNativeNotifications();
+    if (!notifications) return false;
+    configureNotificationHandler(notifications);
+    const permission = await notifications.getPermissionsAsync();
     if (!permission.granted) return false;
-    await ensureAndroidChannel();
-    await Notifications.scheduleNotificationAsync({
+    await ensureAndroidChannel(notifications);
+    await notifications.scheduleNotificationAsync({
       content: {
         title: '¡Tu pedido está listo!',
         body: `Tu pedido ${order.number} ya está listo. Puedes pasar por él a la cafetería.`,
@@ -104,7 +130,7 @@ async function notifyOnNative(order: Order): Promise<boolean> {
       },
       trigger: Platform.OS === 'android'
         ? {
-            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            type: notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
             seconds: 1,
             channelId: READY_CHANNEL,
           }
