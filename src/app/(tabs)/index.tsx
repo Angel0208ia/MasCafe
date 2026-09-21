@@ -173,20 +173,38 @@ export default function HomeScreen() {
                 </Pressable>
               ))}
             </View>
-            {!featured.length && <Text style={styles.noPromotionsText}>{!rankingLoaded
-              ? 'Buscando los favoritos de esta semana…'
-              : rankingError
-              ? 'Los favoritos no están disponibles por el momento. Explora nuestro menú.'
-              : 'Los favoritos se irán descubriendo con las ventas de esta semana. ¡Encuentra el tuyo en el menú!'}</Text>}
+            {!featured.length && (
+              <View style={styles.emptyStateCard}>
+                <Ionicons
+                  name={rankingError ? 'cloud-offline-outline' : rankingLoaded ? 'trophy-outline' : 'time-outline'}
+                  size={28}
+                  color={colors.primary}
+                />
+                <Text style={styles.emptyStateTitle}>
+                  {!rankingLoaded
+                    ? 'Buscando los favoritos de la semana'
+                    : rankingError
+                      ? 'No pudimos cargar los favoritos'
+                      : 'Pronto conoceremos los favoritos'}
+                </Text>
+                <Text style={styles.emptyStateText}>
+                  {!rankingLoaded
+                    ? 'Estamos consultando los productos más pedidos.'
+                    : rankingError
+                      ? 'Explora nuestro menú mientras lo intentamos nuevamente.'
+                      : 'Los favoritos aparecerán conforme se registren las ventas de esta semana. ¡Encuentra el tuyo en el menú!'}
+                </Text>
+              </View>
+            )}
           </View>
         )}
         <Text style={styles.sectionTitle}>Promociones de hoy</Text>
 
         {todaysPromotions.length === 0 && (
-          <View style={styles.noPromotions}>
+          <View style={styles.emptyStateCard}>
             <Ionicons name="calendar-outline" size={28} color={colors.primary} />
-            <Text style={styles.noPromotionsTitle}>¡Lo bueno también se hace esperar!</Text>
-            <Text style={styles.noPromotionsText}>
+            <Text style={styles.emptyStateTitle}>¡Lo bueno también se hace esperar!</Text>
+            <Text style={styles.emptyStateText}>
               Hoy no tenemos promociones. Vuelve otro día y descubre nuevas ofertas para tus antojos.
             </Text>
           </View>
@@ -478,7 +496,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.text,
   },
-  noPromotions: {
+  emptyStateCard: {
     width: '100%',
     alignItems: 'center',
     gap: spacing.md,
@@ -488,13 +506,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.lg,
   },
-  noPromotionsTitle: {
+  emptyStateTitle: {
     color: colors.primary,
     fontSize: font.heading,
     fontWeight: '700',
     textAlign: 'center',
   },
-  noPromotionsText: {
+  emptyStateText: {
     color: colors.muted,
     fontSize: font.body,
     lineHeight: 23,
