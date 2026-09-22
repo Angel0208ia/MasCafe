@@ -273,12 +273,40 @@ label.checkbox {
   outline: 3px solid var(--action-bg);
   outline-offset: 3px;
 }
+.uploadDetails {
+  min-width: 0;
+}
+.uploadLabel {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.hiddenFileInput {
+  display: none;
+}
+.dialog button.choosePhotoButton {
+  margin: 0;
+  padding-inline: 18px;
+  font-weight: 600;
+}
 .upload p {
   font-size: 12px;
-  margin: 8px 0;
+  margin: 10px 0 14px;
 }
-.upload button {
-  margin-top: 10px;
+.uploadActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-height: 42px;
+}
+.uploadActions small {
+  color: var(--muted);
+}
+.dialog button.removePhotoButton {
+  margin: 0 0 0 auto;
 }
 .group {
   display: grid;

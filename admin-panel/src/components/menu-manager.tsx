@@ -528,54 +528,63 @@ function ProductEditor({
                 name="Vista previa"
               />
             </button>
-            <div>
-              <label>
-                Foto del dispositivo
-                <input
-                  ref={fileInput}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={async (e) => {
-                    const selected = e.target.files?.[0];
-                    if (!selected) return;
-                    setProcessing(true);
-                    setError("");
-                    try {
-                      changeFile(await optimizeImage(selected));
-                      setRemoveImage(false);
-                    } catch (err) {
-                      setError(
-                        err instanceof Error
-                          ? err.message
-                          : "No se pudo procesar la foto.",
-                      );
-                    } finally {
-                      setProcessing(false);
-                      e.target.value = "";
-                    }
-                  }}
-                />
-              </label>
+            <div className={styles.uploadDetails}>
+              <span className={styles.uploadLabel}>Foto del dispositivo</span>
+              <input
+                ref={fileInput}
+                className={styles.hiddenFileInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={async (e) => {
+                  const selected = e.target.files?.[0];
+                  if (!selected) return;
+                  setProcessing(true);
+                  setError("");
+                  try {
+                    changeFile(await optimizeImage(selected));
+                    setRemoveImage(false);
+                  } catch (err) {
+                    setError(
+                      err instanceof Error
+                        ? err.message
+                        : "No se pudo procesar la foto.",
+                    );
+                  } finally {
+                    setProcessing(false);
+                    e.target.value = "";
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className={styles.choosePhotoButton}
+                onClick={() => fileInput.current?.click()}
+              >
+                Elegir archivo
+              </button>
               <p>
                 JPG, PNG o WebP hasta 10 MB. Se optimiza a WebP de máximo 1200
                 px.
               </p>
-              {file && (
-                <small>
-                  Lista para subir: {Math.ceil(file.size / 1024)} KB
-                </small>
-              )}
-              {(file || product?.image) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    changeFile(null);
-                    setRemoveImage(true);
-                  }}
-                >
-                  Quitar foto
-                </button>
-              )}
+              <div className={styles.uploadActions}>
+                {file && (
+                  <small>
+                    Lista para subir: {Math.ceil(file.size / 1024)} KB
+                  </small>
+                )}
+                {(file || product?.image) && (
+                  <button
+                    type="button"
+                    className={styles.removePhotoButton}
+                    onClick={() => {
+                      changeFile(null);
+                      setRemoveImage(true);
+                    }}
+                  >
+                    Quitar foto
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className={styles.row}>
