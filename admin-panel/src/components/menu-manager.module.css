@@ -257,6 +257,22 @@ label.checkbox {
 .upload .photo {
   border-radius: 12px;
 }
+.dialog button.photoPicker {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  overflow: hidden;
+}
+.dialog button.photoPicker:hover .photo {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--cream-300);
+}
+.dialog button.photoPicker:focus-visible {
+  outline: 3px solid var(--action-bg);
+  outline-offset: 3px;
+}
 .upload p {
   font-size: 12px;
   margin: 8px 0;

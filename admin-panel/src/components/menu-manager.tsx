@@ -404,6 +404,7 @@ function ProductEditor({
   const [busy, setBusy] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
+  const fileInput = useRef<HTMLInputElement>(null);
   useEffect(
     () => () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -514,15 +515,24 @@ function ProductEditor({
             />
           </label>
           <div className={styles.upload}>
-            <ProductPhoto
-              key={preview || String(removeImage)}
-              image={preview || (removeImage ? "" : (product?.image ?? ""))}
-              name="Vista previa"
-            />
+            <button
+              type="button"
+              className={styles.photoPicker}
+              onClick={() => fileInput.current?.click()}
+              aria-label="Seleccionar una foto del dispositivo"
+              title="Seleccionar una foto"
+            >
+              <ProductPhoto
+                key={preview || String(removeImage)}
+                image={preview || (removeImage ? "" : (product?.image ?? ""))}
+                name="Vista previa"
+              />
+            </button>
             <div>
               <label>
                 Foto del dispositivo
                 <input
+                  ref={fileInput}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={async (e) => {
