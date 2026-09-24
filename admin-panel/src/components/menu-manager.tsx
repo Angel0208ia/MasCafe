@@ -367,6 +367,7 @@ function CenteredDialog({
       aria-label="Configuración de artículo"
       onCancel={(e) => {
         e.preventDefault();
+        if (e.target !== e.currentTarget) return;
         onClose();
       }}
     >
