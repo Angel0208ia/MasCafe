@@ -4,6 +4,116 @@ Sistema de pedidos para una cafetería universitaria: aplicación de cliente par
 
 Todos los importes se manejan en **pesos mexicanos (MXN)**. El sistema registra pedidos y sus totales; no integra una pasarela de pago.
 
+## Abrir la aplicación
+
+El proyecto contiene dos aplicaciones independientes que comparten la misma base de datos:
+
+| Aplicación | Carpeta de ejecución | Dirección habitual |
+| --- | --- | --- |
+| Cliente o panel de usuario | Raíz del repositorio | [http://localhost:8081](http://localhost:8081) |
+| Panel administrativo | `admin-panel/` | [http://localhost:3000](http://localhost:3000) |
+
+### 1. Preparación inicial
+
+Se requiere Node.js **24 LTS**, npm y las variables públicas de un proyecto de Supabase. Después de clonar el repositorio:
+
+```bash
+git clone https://github.com/Angel0208ia/MasCafe.git
+cd MasCafe
+npm ci
+```
+
+Copiar `.env.example` como `.env.local` y completar únicamente las variables públicas:
+
+```dotenv
+EXPO_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=TU_CLAVE_PUBLICA
+```
+
+El repositorio no incluye credenciales reales. No se deben subir `.env.local`, contraseñas, claves `service_role` ni tokens de seguimiento.
+
+### 2. Abrir el panel de usuario
+
+#### En navegador
+
+Desde la raíz del repositorio:
+
+```bash
+npm run web
+```
+
+Esperar a que Expo termine de compilar y abrir [http://localhost:8081](http://localhost:8081). Si el puerto está ocupado, la terminal mostrará la dirección alternativa.
+
+#### En Android o iPhone
+
+Desde la raíz del repositorio:
+
+```bash
+npm start
+```
+
+1. Instalar una versión de Expo Go compatible con **Expo SDK 57**.
+2. Conectar el teléfono y la computadora a la misma red Wi-Fi.
+3. Escanear el QR mostrado por Expo. En Android se escanea desde Expo Go; en iPhone puede usarse la cámara.
+4. Mantener abierta la terminal mientras se utiliza la aplicación.
+
+Si la red local bloquea la conexión, detener Expo con `Ctrl+C` y usar:
+
+```bash
+npx expo start --tunnel
+```
+
+El túnel suele ser más lento, pero permite abrir el proyecto cuando el teléfono no puede comunicarse directamente con la computadora. En iPhone físico, Expo puede pedir que Expo CLI y Expo Go tengan iniciada la misma cuenta. Consulta la [guía oficial para iniciar un proyecto Expo](https://docs.expo.dev/get-started/start-developing/) si el QR no abre la aplicación.
+
+Expo Go permite revisar el flujo principal y las notificaciones locales. Las [notificaciones push remotas en Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/sdk/notifications/) requieren una compilación de desarrollo; este proyecto todavía no envía push cuando la aplicación está completamente cerrada.
+
+### 3. Abrir el panel administrativo
+
+Abrir **otra terminal** y ejecutar:
+
+```bash
+cd admin-panel
+npm ci
+npm run dev
+```
+
+Abrir [http://localhost:3000](http://localhost:3000). El acceso utiliza Supabase Auth y exige una cuenta existente con perfil activo y rol `business` o `admin`; este README no publica credenciales.
+
+En desarrollo, el panel reutiliza las variables públicas del `.env.local` de la raíz. Como alternativa, se puede copiar `admin-panel/.env.example` como `admin-panel/.env.local` y completar:
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=TU_CLAVE_PUBLICA
+```
+
+#### Abrir el panel administrativo desde otro dispositivo
+
+Para mostrar el panel desde un teléfono u otra computadora conectada a la misma red:
+
+```bash
+cd admin-panel
+npm run dev -- --hostname 0.0.0.0
+```
+
+Consultar la dirección IPv4 de la computadora con `ipconfig` en Windows y abrir desde el otro dispositivo:
+
+```text
+http://DIRECCION-IP-DE-LA-COMPUTADORA:3000
+```
+
+Por ejemplo, si la computadora tiene la IP `192.168.1.25`, la dirección sería `http://192.168.1.25:3000`. Windows puede solicitar permiso para que Node.js se comunique en redes privadas. No es necesario cambiar ni publicar credenciales para acceder desde la red local.
+
+### Inicio simultáneo recomendado
+
+Mantener dos terminales abiertas:
+
+```text
+Terminal 1 — raíz del repositorio: npm run web
+Terminal 2 — admin-panel/:       npm run dev
+```
+
+Con ambas aplicaciones abiertas se puede generar un pedido en el cliente y observar su llegada y cambios de estado en el panel administrativo.
+
 ## Funciones
 
 ### Aplicación de cliente
@@ -94,43 +204,17 @@ Crear el primer administrador siguiendo [`docs/admin-panel.md`](docs/admin-panel
 
 ### Variables de entorno
 
-Copiar `.env.example` como `.env.local` en la raíz y completar:
-
-```dotenv
-EXPO_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
-EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=TU_CLAVE_PUBLICA
-```
-
-No subir `.env.local`, claves `service_role`, contraseñas ni tokens de seguimiento al repositorio.
+La configuración inicial y los nombres de las variables públicas están descritos en [Abrir la aplicación](#abrir-la-aplicación). Los archivos `.env.local`, las contraseñas, las claves `service_role` y los tokens de seguimiento deben permanecer fuera del repositorio.
 
 ## Ejecutar en desarrollo
 
-### Cliente — desde la raíz
-
-```bash
-npm ci
-npm start
-```
-
-Escanear el QR con Expo Go; teléfono y computadora deben poder comunicarse por la red. En la terminal, `a` abre Android y `w` abre web.
+Las instrucciones completas se encuentran en [Abrir la aplicación](#abrir-la-aplicación). Desde Expo CLI, `a` abre Android y `w` abre web.
 
 Las notificaciones locales de pedidos usan `expo-notifications`. Android e iOS necesitan una nueva compilación de desarrollo o producción después de agregar el plugin nativo. En web se usa la API de notificaciones del navegador. Estos avisos se generan cuando la aplicación abierta recibe el cambio por Realtime o cuando recupera un pedido listo al volver a abrirse; las notificaciones con la aplicación completamente cerrada requieren configurar push remoto, credenciales APNs/FCM y, para web, un service worker con Web Push.
 
 La ubicación se solicita al pulsar **Generar pedido**. El cliente comprueba el perímetro del campus y Supabase repite la validación antes de crear el pedido; las coordenadas se usan para esta comprobación y no se guardan. En web, la ubicación requiere `https` o `localhost`. Android e iOS necesitan una nueva compilación después de agregar `expo-location` y su texto de permiso nativo.
 
-Dirección habitual del cliente web: [http://localhost:8081](http://localhost:8081). Expo puede ofrecer otro puerto si está ocupado.
-
-### Panel de negocio — en otra terminal
-
-```bash
-cd admin-panel
-npm ci
-npm run dev
-```
-
-Abrir [http://localhost:3000](http://localhost:3000) e ingresar con la cuenta de personal asignada.
-
-Dentro del repositorio puede reutilizar las variables públicas de la raíz. Para configuración independiente, copiar `admin-panel/.env.example` como `admin-panel/.env.local` y completar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+Dirección habitual del cliente web: [http://localhost:8081](http://localhost:8081). Expo puede ofrecer otro puerto si está ocupado. El panel de negocio utiliza [http://localhost:3000](http://localhost:3000).
 
 ## Verificaciones y compilación
 
