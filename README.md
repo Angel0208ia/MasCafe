@@ -110,7 +110,7 @@ Desde la raíz `MasCafe`:
 npm run web
 ```
 
-Abrir [http://localhost:8081](http://localhost:8081). Si el puerto está ocupado, Expo mostrará la dirección alternativa.
+Abrir [http://localhost:8081](http://localhost:8081). La primera compilación después de `npm ci` puede tardar algunos minutos. Si el puerto está ocupado, Expo mostrará la dirección alternativa.
 
 ### Panel de usuario en Android o iPhone
 
@@ -139,7 +139,7 @@ cd admin-panel
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000) e iniciar sesión con el usuario creado en Supabase.
+Abrir [http://localhost:3000](http://localhost:3000) e iniciar sesión con el usuario creado en Supabase. Si el puerto `3000` está ocupado, Next.js mostrará otra dirección, por ejemplo `http://localhost:3001`; se debe abrir exactamente la URL indicada en la terminal.
 
 Para abrir el panel desde otro dispositivo de la misma red:
 
