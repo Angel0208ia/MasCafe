@@ -11,7 +11,8 @@ Sistema de pedidos para una cafetería universitaria. Incluye una aplicación cl
 
 - Git.
 - Node.js **24 LTS** y npm.
-- Un proyecto de [Supabase](https://supabase.com/dashboard).
+- Acceso a la URL y la publishable key del proyecto de Supabase ya configurado.
+- Una cuenta activa del personal para ingresar al panel administrativo.
 - Expo Go compatible con **Expo SDK 57** para probar en un teléfono.
 
 ## Instalación completa
@@ -27,46 +28,9 @@ npm --prefix admin-panel ci
 
 Todos los comandos siguientes parten de la carpeta `MasCafe`.
 
-### 2. Configurar la base de datos
+### 2. Crear los archivos de entorno
 
-Crear un proyecto en Supabase. En **SQL Editor**, ejecutar estos archivos completos y en el orden indicado:
-
-1. [`supabase/schema.sql`](supabase/schema.sql)
-2. [`supabase/admin-panel.sql`](supabase/admin-panel.sql)
-3. [`supabase/customer-cancellations.sql`](supabase/customer-cancellations.sql)
-4. [`supabase/seed-products.sql`](supabase/seed-products.sql)
-5. [`supabase/menu-management.sql`](supabase/menu-management.sql)
-6. [`supabase/promotions-management.sql`](supabase/promotions-management.sql)
-7. [`supabase/weekly-best-sellers.sql`](supabase/weekly-best-sellers.sql)
-8. [`supabase/migrations/202609150001_harden_function_privileges.sql`](supabase/migrations/202609150001_harden_function_privileges.sql)
-9. [`supabase/migrations/202609170001_complete_mvp_checklist.sql`](supabase/migrations/202609170001_complete_mvp_checklist.sql)
-10. [`supabase/migrations/202609200001_enforce_campus_geofence.sql`](supabase/migrations/202609200001_enforce_campus_geofence.sql)
-
-Esta secuencia crea el catálogo, pedidos, promociones, permisos, Realtime, almacenamiento de imágenes y geocerca. Para una base existente, aplicar solamente los archivos que falten. No volver a ejecutar `schema.sql` ni `seed-products.sql`, porque pueden entrar en conflicto con el esquema o sobrescribir el catálogo.
-
-### 3. Crear el primer administrador
-
-1. En Supabase, abrir **Authentication > Users**.
-2. Seleccionar **Add user** y crear un usuario con correo y contraseña.
-3. Reemplazar únicamente el correo de ejemplo en este bloque y ejecutarlo en **SQL Editor**:
-
-```sql
-insert into public.staff_members (user_id, display_name, role)
-select id, 'Administrador', 'admin'
-from auth.users
-where email = 'TU_CORREO_AQUI'
-on conflict (user_id) do update
-set display_name = excluded.display_name,
-    role = excluded.role,
-    active = true,
-    updated_at = now();
-```
-
-El rol `admin` puede gestionar menú y promociones. El rol `business` puede operar pedidos. El repositorio no contiene cuentas ni contraseñas.
-
-### 4. Crear los archivos de entorno
-
-En Supabase, abrir el diálogo **Connect** o **Settings > API Keys** y copiar la URL del proyecto y la **publishable key**. No usar una secret key ni `service_role`.
+La base de datos del proyecto ya está creada y configurada. Solicitar al responsable del proyecto la URL de Supabase y la **publishable key**, o consultarlas en el diálogo **Connect** o en **Settings > API Keys** si se tiene acceso al panel. No usar una secret key ni `service_role`.
 
 Desde `MasCafe`, crear los dos archivos con PowerShell:
 
@@ -139,7 +103,7 @@ cd admin-panel
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000) e iniciar sesión con el usuario creado en Supabase. Si el puerto `3000` está ocupado, Next.js mostrará otra dirección, por ejemplo `http://localhost:3001`; se debe abrir exactamente la URL indicada en la terminal.
+Abrir [http://localhost:3000](http://localhost:3000) e iniciar sesión con una cuenta activa del personal. Si el puerto `3000` está ocupado, Next.js mostrará otra dirección, por ejemplo `http://localhost:3001`; se debe abrir exactamente la URL indicada en la terminal.
 
 Para abrir el panel desde otro dispositivo de la misma red:
 
@@ -240,10 +204,10 @@ tests/                       Pruebas del cliente
 ## Problemas frecuentes
 
 - **Faltan variables de Supabase:** comprobar la ubicación y los nombres de ambos `.env.local`, y reiniciar los servidores.
-- **El panel rechaza el acceso:** confirmar que el usuario exista en Auth y tenga un registro activo en `staff_members`.
+- **El panel rechaza el acceso:** confirmar con el responsable que la cuenta exista y esté activa para el proyecto.
 - **El QR no abre:** comprobar la misma red Wi-Fi o usar `npx expo start --tunnel`.
 - **Puerto ocupado:** usar la dirección alternativa que muestra Expo o cerrar el proceso del puerto `3000`.
 - **Cambios antiguos en Expo:** detener el servidor y ejecutar `npx expo start --clear`.
-- **No llegan pedidos en vivo:** comprobar que ambas aplicaciones usen el mismo proyecto y que `admin-panel.sql` haya terminado correctamente.
+- **No llegan pedidos en vivo:** comprobar que ambas aplicaciones utilicen la misma URL y publishable key de Supabase.
 
 Documentación adicional: [`docs/backend-anonimo.md`](docs/backend-anonimo.md), [`docs/admin-panel.md`](docs/admin-panel.md), [`docs/promotions.md`](docs/promotions.md), [`docs/performance.md`](docs/performance.md) y [`admin-panel/SECURITY.md`](admin-panel/SECURITY.md).
