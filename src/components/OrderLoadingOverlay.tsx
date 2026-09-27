@@ -5,6 +5,7 @@ import { colors, font, radius, spacing } from '@/constants/theme';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 export type OrderLoadingStage = 'location' | 'notifications' | 'submitting';
+const LOADING_DELAY_MS = 1000;
 
 const messages: Record<OrderLoadingStage, { title: string; description: string }> = {
   location: {
@@ -25,9 +26,15 @@ export default function OrderLoadingOverlay({ stage }: { stage: OrderLoadingStag
   const [rotation] = useState(() => new Animated.Value(0));
   const reduceMotion = useReduceMotion();
   const isIOS = Platform.OS === 'ios';
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (reduceMotion || isIOS) return;
+    const timer = setTimeout(() => setVisible(true), LOADING_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!visible || reduceMotion || isIOS) return;
     const animation = Animated.loop(Animated.timing(rotation, {
       toValue: 1,
       duration: 1800,
@@ -40,7 +47,9 @@ export default function OrderLoadingOverlay({ stage }: { stage: OrderLoadingStag
       animation.stop();
       rotation.setValue(0);
     };
-  }, [isIOS, reduceMotion, rotation]);
+  }, [isIOS, reduceMotion, rotation, visible]);
+
+  if (!visible) return null;
 
   const content = (
       <View style={styles.overlay} accessibilityViewIsModal>
