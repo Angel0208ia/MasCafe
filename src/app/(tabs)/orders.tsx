@@ -24,6 +24,10 @@ function loadHiddenOrderIds(): string[] {
   }
 }
 
+function isFinishedOrder(order: Order): boolean {
+  return order.status === 'delivered' || order.status === 'cancelled';
+}
+
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -140,7 +144,8 @@ export default function OrdersScreen() {
   const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
   const [dialog, setDialog] = useState<{ title: string; message: string; actions?: AppDialogAction[] } | null>(null);
   const [hiddenOrderIds, setHiddenOrderIds] = useState(loadHiddenOrderIds);
-  const visibleOrders = orders.filter((order) => !hiddenOrderIds.includes(order.id));
+  const visibleOrders = orders.filter((order) => !isFinishedOrder(order) || !hiddenOrderIds.includes(order.id));
+  const finishedOrders = visibleOrders.filter(isFinishedOrder);
   const [now, setNow] = useState(INITIAL_TIME);
   const latestOrder = orders[0];
   const nextOrderAt = getOrderCooldownUntil(latestOrder);
@@ -151,15 +156,16 @@ export default function OrdersScreen() {
   const horizontalPadding = getScreenPadding(width);
 
   const handleClearHistory = () => {
+    if (finishedOrders.length === 0) return;
     setDialog({
-      title: 'Limpiar historial visible',
-      message: 'Estos pedidos dejarán de aparecer en este dispositivo, incluidos los que estén en curso. Seguirán guardados en la cafetería. Las restricciones para generar pedidos se conservan.',
+      title: 'Ocultar pedidos finalizados',
+      message: 'Los pedidos entregados y cancelados dejarán de aparecer en este dispositivo. Los pedidos en curso seguirán visibles y todos los registros se conservarán en la cafetería.',
       actions: [
         { label: 'Cancelar', variant: 'secondary' },
         {
           label: 'Limpiar historial',
           onPress: () => {
-            const ids = [...new Set([...hiddenOrderIds, ...visibleOrders.map((order) => order.id)])];
+            const ids = [...new Set([...hiddenOrderIds, ...finishedOrders.map((order) => order.id)])];
             writeStorageItem(HIDDEN_HISTORY_KEY, JSON.stringify(ids));
             setHiddenOrderIds(ids);
           },
@@ -242,9 +248,11 @@ export default function OrdersScreen() {
                 <Text style={styles.sectionTitle}>Historial</Text>
                 <Pressable
                   onPress={handleClearHistory}
-                  style={({ pressed }) => [styles.clearHistoryButton, pressed && styles.actionPressed]}
+                  disabled={finishedOrders.length === 0}
+                  style={({ pressed }) => [styles.clearHistoryButton, (pressed || finishedOrders.length === 0) && styles.actionPressed]}
                   accessibilityRole="button"
-                  accessibilityLabel="Limpiar el historial visible de este dispositivo"
+                  accessibilityLabel="Ocultar los pedidos entregados y cancelados de este dispositivo"
+                  accessibilityState={{ disabled: finishedOrders.length === 0 }}
                 >
                   <Ionicons name="eye-off-outline" size={17} color={colors.primary} />
                   <Text style={styles.clearHistoryText}>Limpiar historial</Text>

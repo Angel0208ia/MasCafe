@@ -148,7 +148,7 @@ Con ambos abiertos, un pedido creado en el cliente debe aparecer en vivo en el p
 - Si cancelas de nuevo antes de que pasen **12 horas** desde la última cancelación, se aplica un bloqueo de **2 horas**. Si pasan 12 horas o más, esa cancelación no genera un nuevo bloqueo.
 - Un pedido en preparación ya no puede cancelarse.
 - Los pedidos cancelados permanecen en la base de datos.
-- Para preparar un dispositivo para una demostración, abre **Mis pedidos → Limpiar historial**. Oculta los pedidos en ese dispositivo sin borrarlos de Supabase ni quitar las restricciones para pedir; los nuevos pedidos aparecen normalmente. Repite este paso en cada dispositivo o navegador utilizado.
+- Para preparar un dispositivo para una demostración, abre **Mis pedidos → Limpiar historial**. Oculta únicamente los pedidos **Entregados y Cancelados** en ese dispositivo, sin borrarlos de Supabase ni quitar las restricciones para pedir. Los pedidos en curso siguen visibles; los nuevos pedidos aparecen normalmente. Repite este paso en cada dispositivo o navegador utilizado.
 - PostgreSQL recalcula precios y promociones; el cliente no decide el total final.
 
 ```text
