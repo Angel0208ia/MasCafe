@@ -5,9 +5,13 @@ create table if not exists public.anonymous_clients (
   client_token uuid primary key default gen_random_uuid(),
   cancellation_count integer not null default 0 check (cancellation_count >= 0),
   blocked_until timestamptz,
+  last_cancellation_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.anonymous_clients
+  add column if not exists last_cancellation_at timestamptz;
 
 alter table public.orders
   add column if not exists client_token uuid references public.anonymous_clients(client_token);
@@ -97,6 +101,7 @@ declare
   v_client_token uuid;
   v_cancellation_count integer;
   v_blocked_until timestamptz;
+  v_last_cancellation_at timestamptz;
 begin
   select orders.id, orders.status, orders.client_token
   into v_order_id, v_status, v_order_client_token
@@ -126,20 +131,25 @@ begin
   values (v_client_token)
   on conflict (client_token) do nothing;
 
-  select anonymous_clients.cancellation_count, anonymous_clients.blocked_until
-  into v_cancellation_count, v_blocked_until
+  select anonymous_clients.cancellation_count, anonymous_clients.blocked_until,
+         anonymous_clients.last_cancellation_at
+  into v_cancellation_count, v_blocked_until, v_last_cancellation_at
   from public.anonymous_clients
   where anonymous_clients.client_token = v_client_token
   for update;
 
   v_cancellation_count := v_cancellation_count + 1;
-  if v_cancellation_count >= 2 then
+  -- El total se conserva para auditoría; la sanción depende de la última cancelación.
+  if v_last_cancellation_at > now() - interval '12 hours' then
     v_blocked_until := now() + interval '2 hours';
+  elsif v_blocked_until is null or v_blocked_until <= now() then
+    v_blocked_until := null;
   end if;
 
   update public.anonymous_clients
   set cancellation_count = v_cancellation_count,
       blocked_until = v_blocked_until,
+      last_cancellation_at = now(),
       updated_at = now()
   where client_token = v_client_token;
 

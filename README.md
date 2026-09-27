@@ -145,7 +145,7 @@ Con ambos abiertos, un pedido creado en el cliente debe aparecer en vivo en el p
 
 - Máximo de **3 artículos por pedido**.
 - Espera normal de **30 minutos** entre pedidos.
-- Desde la segunda cancelación se aplica un bloqueo de **2 horas**.
+- Si cancelas de nuevo antes de que pasen **12 horas** desde la última cancelación, se aplica un bloqueo de **2 horas**. Si pasan 12 horas o más, esa cancelación no genera un nuevo bloqueo.
 - Un pedido en preparación ya no puede cancelarse.
 - Los pedidos cancelados permanecen en la base de datos.
 - PostgreSQL recalcula precios y promociones; el cliente no decide el total final.
