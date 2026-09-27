@@ -9,12 +9,13 @@ export type AppDialogAction = {
   variant?: 'primary' | 'secondary' | 'danger';
 };
 
-type AppDialogProps = {
+export type AppDialogProps = {
   visible: boolean;
   title: string;
   message: ReactNode;
   messageStyle?: StyleProp<TextStyle>;
   icon?: keyof typeof Ionicons.glyphMap;
+  iconContent?: ReactNode;
   actions?: AppDialogAction[];
   onClose: () => void;
 };
@@ -25,6 +26,7 @@ export default function AppDialog({
   message,
   messageStyle,
   icon = 'cafe-outline',
+  iconContent,
   actions = [{ label: 'Entendido' }],
   onClose,
 }: AppDialogProps) {
@@ -44,7 +46,7 @@ export default function AppDialog({
 
         <View style={styles.card}>
           <View style={styles.iconContainer}>
-            <Ionicons name={icon} size={28} color={colors.primary} />
+            {iconContent ?? <Ionicons name={icon} size={28} color={colors.primary} />}
           </View>
 
           <Text style={styles.title}>{title}</Text>
@@ -139,6 +141,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     width: '100%',
+    minHeight: 46,
     flexDirection: 'row',
     gap: spacing.sm,
     marginTop: spacing.xl,

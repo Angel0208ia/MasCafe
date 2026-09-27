@@ -12,9 +12,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
+import { type AppDialogAction } from '@/components/AppDialog';
 import ProductImage from '@/components/ProductImage';
-import OrderLoadingOverlay, { type OrderLoadingStage } from '@/components/OrderLoadingOverlay';
+import OrderDialog, { type OrderLoadingStage } from '@/components/OrderDialog';
 import { getCartPricing } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
@@ -363,14 +363,9 @@ export default function CartScreen() {
           ) : null
         }
       />
-      {isCheckingLocation && <OrderLoadingOverlay stage={loadingStage} />}
-      <AppDialog
-        visible={dialog !== null}
-        title={dialog?.title ?? ''}
-        message={dialog?.message ?? ''}
-        messageStyle={dialog?.messageStyle}
-        icon={dialog?.icon}
-        actions={dialog?.actions}
+      <OrderDialog
+        loadingStage={isCheckingLocation ? loadingStage : null}
+        dialog={dialog}
         onClose={() => setDialog(null)}
       />
     </SafeAreaView>
