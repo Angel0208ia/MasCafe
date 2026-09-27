@@ -3,15 +3,26 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AppDialog from '@/components/AppDialog';
+import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
 import { useForegroundRefresh } from '@/hooks/useForegroundRefresh';
 import { getOrderStatusLabel } from '@/constants/orderStatus';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import { useProductsStore } from '@/store/productsStore';
 import { getOrderCooldownUntil } from '@/lib/orderCooldown';
+import { readStorageItem, writeStorageItem } from '@/lib/storageAccess';
 import type { Order } from '@/types/product';
 
 const INITIAL_TIME = Date.now();
+const HIDDEN_HISTORY_KEY = 'mascafe-hidden-order-history';
+
+function loadHiddenOrderIds(): string[] {
+  try {
+    const value: unknown = JSON.parse(readStorageItem(HIDDEN_HISTORY_KEY) ?? '[]');
+    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 function formatRemainingTime(milliseconds: number): string {
   const totalSeconds = Math.ceil(milliseconds / 1000);
@@ -127,7 +138,9 @@ export default function OrdersScreen() {
   const loadTrackedOrders = useProductsStore((state) => state.loadTrackedOrders);
   const repeatOrder = useProductsStore((state) => state.repeatOrder);
   const orderingBlockedUntil = useProductsStore((state) => state.orderingBlockedUntil);
-  const [dialog, setDialog] = useState<{ title: string; message: string } | null>(null);
+  const [dialog, setDialog] = useState<{ title: string; message: string; actions?: AppDialogAction[] } | null>(null);
+  const [hiddenOrderIds, setHiddenOrderIds] = useState(loadHiddenOrderIds);
+  const visibleOrders = orders.filter((order) => !hiddenOrderIds.includes(order.id));
   const [now, setNow] = useState(INITIAL_TIME);
   const latestOrder = orders[0];
   const nextOrderAt = getOrderCooldownUntil(latestOrder);
@@ -136,6 +149,24 @@ export default function OrdersScreen() {
   const remainingMs = Math.max(regularCooldownRemainingMs, cancellationBlockRemainingMs);
   const isCancellationBlocked = cancellationBlockRemainingMs > 0;
   const horizontalPadding = getScreenPadding(width);
+
+  const handleClearHistory = () => {
+    setDialog({
+      title: 'Limpiar historial visible',
+      message: 'Estos pedidos dejarán de aparecer en este dispositivo, incluidos los que estén en curso. Seguirán guardados en la cafetería. Las restricciones para generar pedidos se conservan.',
+      actions: [
+        { label: 'Cancelar', variant: 'secondary' },
+        {
+          label: 'Limpiar historial',
+          onPress: () => {
+            const ids = [...new Set([...hiddenOrderIds, ...visibleOrders.map((order) => order.id)])];
+            writeStorageItem(HIDDEN_HISTORY_KEY, JSON.stringify(ids));
+            setHiddenOrderIds(ids);
+          },
+        },
+      ],
+    });
+  };
 
   const handleRepeatOrder = useCallback((orderId: string) => {
     const result = repeatOrder(orderId);
@@ -171,7 +202,7 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <FlatList
         style={styles.list}
-        data={orders}
+        data={visibleOrders}
         keyExtractor={(order) => order.id}
         contentContainerStyle={[styles.content, { paddingHorizontal: horizontalPadding }]}
         showsVerticalScrollIndicator={false}
@@ -206,7 +237,20 @@ export default function OrdersScreen() {
               </View>
             )}
 
-            {orders.length > 0 && <Text style={styles.sectionTitle}>Historial</Text>}
+            {visibleOrders.length > 0 && (
+              <View style={styles.historyHeader}>
+                <Text style={styles.sectionTitle}>Historial</Text>
+                <Pressable
+                  onPress={handleClearHistory}
+                  style={({ pressed }) => [styles.clearHistoryButton, pressed && styles.actionPressed]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Limpiar el historial visible de este dispositivo"
+                >
+                  <Ionicons name="eye-off-outline" size={17} color={colors.primary} />
+                  <Text style={styles.clearHistoryText}>Limpiar historial</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         }
         renderItem={({ item }) => (
@@ -219,8 +263,8 @@ export default function OrdersScreen() {
         ListEmptyComponent={
           <View style={styles.empty}>
             <Ionicons name="receipt-outline" size={58} color={colors.chipBorder} />
-            <Text style={styles.emptyTitle}>Aún no tienes pedidos</Text>
-            <Text style={styles.emptyText}>Cuando generes uno aparecerá en esta pantalla.</Text>
+            <Text style={styles.emptyTitle}>No hay pedidos visibles</Text>
+            <Text style={styles.emptyText}>Los nuevos pedidos aparecerán en esta pantalla.</Text>
             <Pressable style={styles.menuButton} onPress={() => router.navigate('/products')}>
               <Text style={styles.menuButtonText}>Ver el menú</Text>
             </Pressable>
@@ -232,6 +276,7 @@ export default function OrdersScreen() {
         visible={dialog !== null}
         title={dialog?.title ?? ''}
         message={dialog?.message ?? ''}
+        actions={dialog?.actions}
         icon="alert-circle-outline"
         onClose={() => setDialog(null)}
       />
@@ -272,8 +317,6 @@ const styles = StyleSheet.create({
   cooldownTitle: { fontSize: font.body, fontWeight: '800', color: colors.primary },
   cooldownText: { marginTop: 3, fontSize: font.tiny, color: colors.muted },
   sectionTitle: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
     fontSize: font.heading,
     fontWeight: '800',
     color: colors.text,
@@ -286,6 +329,27 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
   },
+  historyHeader: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  clearHistoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.chipBorder,
+    backgroundColor: colors.surface,
+  },
+  clearHistoryText: { fontSize: font.tiny, fontWeight: '700', color: colors.primary },
   orderCardPressed: { opacity: 0.78 },
   orderHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   orderIdentity: { flex: 1, marginRight: spacing.sm },
