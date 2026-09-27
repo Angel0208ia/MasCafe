@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppDialog, { type AppDialogAction } from '@/components/AppDialog';
 import ProductImage from '@/components/ProductImage';
+import OrderLoadingOverlay, { type OrderLoadingStage } from '@/components/OrderLoadingOverlay';
 import { getCartPricing } from '@/constants/promotions';
 import { colors, font, getScreenPadding, layout, radius, spacing } from '@/constants/theme';
 import {
@@ -131,6 +132,7 @@ export default function CartScreen() {
   const [now, setNow] = useState(INITIAL_TIME);
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [isCheckingLocation, setIsCheckingLocation] = useState(false);
+  const [loadingStage, setLoadingStage] = useState<OrderLoadingStage>('location');
   const cartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const pricing = getCartPricing(cart, new Date(now));
   const regularCooldownRemainingMs = Math.max(0, nextOrderAt - now);
@@ -160,66 +162,78 @@ export default function CartScreen() {
   }, [nextOrderAt, orderingBlockedUntil, loadCafeteriaStatus, loadMenu]));
 
   const submitOrder = async () => {
+    if (isCheckingLocation || isSubmittingOrder) return;
+    setLoadingStage('location');
     setIsCheckingLocation(true);
-    const campusLocation = await verifyCampusLocation();
-    if (!campusLocation.success) {
-      setIsCheckingLocation(false);
-      const canOpenSettings = Platform.OS !== 'web'
-        && (campusLocation.reason === 'permission-denied'
-          || campusLocation.reason === 'services-disabled');
+    try {
+      const campusLocation = await verifyCampusLocation();
+      if (!campusLocation.success) {
+        const canOpenSettings = Platform.OS !== 'web'
+          && (campusLocation.reason === 'permission-denied'
+            || campusLocation.reason === 'services-disabled');
+        setDialog({
+          title: campusLocation.reason === 'outside-campus'
+            ? 'Estás fuera del campus'
+            : campusLocation.reason === 'permission-denied'
+              || campusLocation.reason === 'services-disabled'
+              ? 'Activa tu ubicación'
+              : 'No pudimos validar tu ubicación',
+          message: campusLocation.message,
+          icon: 'location-outline',
+          actions: canOpenSettings
+            ? [
+                { label: 'Ahora no', variant: 'secondary' },
+                {
+                  label: 'Abrir configuración',
+                  onPress: () => { void Linking.openSettings(); },
+                },
+              ]
+            : undefined,
+        });
+        return;
+      }
+
+      setLoadingStage('notifications');
+      await requestCustomerNotificationPermission();
+      setLoadingStage('submitting');
+      const result = await placeOrder(campusLocation.location);
+
+      if (!result.success) {
+        const message = result.reason === 'cooldown' || result.reason === 'blocked'
+          ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
+          : result.reason === 'empty'
+            ? 'Tu carrito está vacío.'
+            : result.message ?? 'No se pudo generar el pedido. Revisa tu conexión e inténtalo de nuevo.';
+        setDialog({
+          title: 'No se pudo generar el pedido',
+          message,
+          icon: 'time-outline',
+        });
+        return;
+      }
+
       setDialog({
-        title: campusLocation.reason === 'outside-campus'
-          ? 'Estás fuera del campus'
-          : campusLocation.reason === 'permission-denied'
-            || campusLocation.reason === 'services-disabled'
-            ? 'Activa tu ubicación'
-            : 'No pudimos validar tu ubicación',
-        message: campusLocation.message,
-        icon: 'location-outline',
-        actions: canOpenSettings
-          ? [
-              { label: 'Ahora no', variant: 'secondary' },
-              {
-                label: 'Abrir configuración',
-                onPress: () => { void Linking.openSettings(); },
-              },
-            ]
-          : undefined,
+        title: 'Pedido generado',
+        message: (
+          <>
+            Tu pedido <Text style={styles.orderNumber}>{result.order.number}</Text> fue generado
+          </>
+        ),
+        messageStyle: { fontSize: 16, lineHeight: 24 },
+        icon: 'checkmark-circle-outline',
+        actions: [
+          { label: 'Ver pedido', onPress: () => router.navigate('/orders') },
+        ],
       });
-      return;
-    }
-
-    await requestCustomerNotificationPermission();
-    const result = await placeOrder(campusLocation.location);
-    setIsCheckingLocation(false);
-
-    if (!result.success) {
-      const message = result.reason === 'cooldown' || result.reason === 'blocked'
-        ? `Podrás generar otro pedido en ${formatRemainingTime(result.remainingMs)}.`
-        : result.reason === 'empty'
-          ? 'Tu carrito está vacío.'
-          : result.message ?? 'No se pudo generar el pedido. Revisa tu conexión e inténtalo de nuevo.';
+    } catch {
       setDialog({
         title: 'No se pudo generar el pedido',
-        message,
-        icon: 'time-outline',
+        message: 'Revisa tu conexión y los permisos de ubicación e inténtalo nuevamente.',
+        icon: 'alert-circle-outline',
       });
-      return;
+    } finally {
+      setIsCheckingLocation(false);
     }
-
-    setDialog({
-      title: 'Pedido generado',
-      message: (
-        <>
-          Tu pedido <Text style={styles.orderNumber}>{result.order.number}</Text> fue generado
-        </>
-      ),
-      messageStyle: { fontSize: 16, lineHeight: 24 },
-      icon: 'checkmark-circle-outline',
-      actions: [
-        { label: 'Ver pedido', onPress: () => router.navigate('/orders') },
-      ],
-    });
   };
 
   const confirmClearCart = () => {
@@ -329,7 +343,11 @@ export default function CartScreen() {
               >
                 <Text style={styles.orderButtonText}>
                   {isCheckingLocation
-                    ? 'Verificando ubicación...'
+                    ? loadingStage === 'location'
+                      ? 'Verificando ubicación...'
+                      : loadingStage === 'notifications'
+                        ? 'Preparando avisos...'
+                        : 'Generando pedido...'
                     : isSubmittingOrder
                     ? 'Generando pedido...'
                     : !isCafeteriaOpen
@@ -345,6 +363,7 @@ export default function CartScreen() {
           ) : null
         }
       />
+      {isCheckingLocation && <OrderLoadingOverlay stage={loadingStage} />}
       <AppDialog
         visible={dialog !== null}
         title={dialog?.title ?? ''}
