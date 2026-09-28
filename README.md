@@ -131,7 +131,7 @@ Con las dependencias y los dos `.env.local` ya configurados, ejecutar desde `Mas
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/install-desktop-launchers.ps1
 ```
 
-Esto crea **Mas Cafe - Usuario.cmd** y **Mas Cafe - Admin.cmd** en el escritorio. Con doble clic, el primero inicia Expo, muestra el QR y abre la app web; el segundo inicia el panel y abre el navegador cuando está listo. Mantener abierta la ventana del servidor y usar `Ctrl+C` para detenerlo. Si el panel ya está iniciado, se reutiliza; si el puerto está ocupado por otro programa, se busca uno libre. Si se cambia de carpeta el proyecto, ejecutar de nuevo el instalador.
+Esto crea los accesos directos **Mas Cafe - Usuario** y **Mas Cafe - Admin** (`.lnk`) en el escritorio. Con doble clic, el primero inicia Expo, muestra el QR y abre la app web; el segundo inicia el panel y abre el navegador cuando está listo. Mantener abierta la ventana del servidor y usar `Ctrl+C` para detenerlo. Si el panel ya está iniciado, se reutiliza; si el puerto está ocupado por otro programa, se busca uno libre. Si se cambia de carpeta el proyecto, ejecutar de nuevo el instalador.
 
 ## Funciones principales
 
